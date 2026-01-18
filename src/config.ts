@@ -7,6 +7,7 @@ export interface LLMConfig {
 
 const config = new Conf<LLMConfig>({
   projectName: "llm-cli",
+  projectSuffix: "",
   defaults: {},
 });
 

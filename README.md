@@ -1,0 +1,135 @@
+# llm
+
+A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to your preferred LLM tool.
+
+## Features
+
+- **Zero Configuration**: Auto-detects installed LLM CLIs (OpenCode, Claude, Gemini, Codex, Ollama)
+- **Transparent Proxy**: All flags and subcommands pass through to the underlying provider
+- **Pipe Support**: Process output from other CLI tools
+- **Cross-Platform**: Pre-built binaries for macOS, Linux, and Windows
+
+## Installation
+
+### For Humans
+
+**macOS (Apple Silicon)**
+```bash
+curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-darwin-arm64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
+```
+
+**macOS (Intel)**
+```bash
+curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-darwin-x64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
+```
+
+**Linux (x64)**
+```bash
+curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-linux-x64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
+```
+
+**Linux (ARM64)**
+```bash
+curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-linux-arm64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
+```
+
+**Windows (PowerShell)**
+```powershell
+Invoke-WebRequest -Uri https://github.com/taoalpha/llm/releases/latest/download/llm-windows-x64.exe -OutFile $env:LOCALAPPDATA\llm.exe
+```
+
+Make sure `~/.local/bin` is in your PATH:
+```bash
+export PATH="$HOME/.local/bin:$PATH"
+```
+
+### For AI Agents
+
+Add to your `AGENTS.md` or system prompt:
+
+```markdown
+## LLM CLI Tool
+
+The `llm` command is a universal wrapper for LLM CLI tools. Use it to:
+- Send prompts: `llm "your question here"`
+- Pipe input: `cat file.txt | llm "summarize this"`
+- Run provider commands: `llm session list`, `llm login`, etc.
+- Switch providers: `llm --provider claude "hello"`
+- Manage settings: `llm --self`
+
+The tool auto-detects installed providers (opencode, claude, gemini, codex, ollama) and uses the first available one.
+```
+
+## Usage
+
+```bash
+# Send a prompt (uses default provider)
+llm "Explain quantum computing"
+
+# Pipe input
+cat logs.txt | llm "Find errors in these logs"
+
+# Provider subcommands pass through transparently
+llm session list          # -> opencode session list
+llm login                 # -> claude login
+llm --version             # -> <provider> --version
+
+# Force a specific provider
+llm --provider claude "Hello"
+
+# Manage llm settings (set default provider, install providers)
+llm --self
+```
+
+## Supported Providers
+
+| Provider | Command | Install |
+|----------|---------|---------|
+| OpenCode | `opencode` | `brew install opencode-ai/tap/opencode` |
+| Claude | `claude` | `npm install -g @anthropic-ai/claude-code` |
+| Gemini | `gemini` | `npm install -g @google/gemini-cli` |
+| Codex | `codex` | `npm install -g @openai/codex` |
+| Ollama | `ollama` | `brew install ollama` |
+
+The tool auto-detects providers in the order listed above.
+
+## Configuration
+
+Run `llm --self` to open the interactive configuration menu where you can:
+- Set a default provider
+- View installed providers
+- Get installation commands for new providers
+
+Configuration is stored in `~/.config/llm-cli/config.json`.
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--self` | Open the llm configuration menu |
+| `--provider <name>` | Use a specific provider for this command |
+
+All other flags are passed through to the underlying provider.
+
+## Development
+
+```bash
+# Install dependencies
+bun install
+
+# Run in development
+bun run dev
+
+# Type check
+bun run typecheck
+
+# Build binary
+bun run build
+
+# Build for all platforms
+bun run build:all
+```
+
+## License
+
+MIT

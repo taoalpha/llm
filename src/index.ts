@@ -5,7 +5,7 @@ import { getDefaultProvider } from "./config";
 import { getProvider, detectProvider } from "./providers";
 import { runSelfUI } from "./ui/setup";
 
-const VERSION = "0.0.1";
+const VERSION = "0.0.2";
 
 /**
  * Parse and extract llm-specific flags from argv

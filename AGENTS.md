@@ -4,281 +4,131 @@ Guidelines for AI agents working on this repository.
 
 ## Project Overview
 
-This repository contains `llm`, a lightweight, LLM-agnostic bash CLI wrapper that auto-detects and delegates to various LLM tools. It supports multiple backends including OpenCode, Claude, Gemini, Codex, Ollama, and any OpenAI-compatible API.
+This repo ships `llm`, a provider-agnostic CLI wrapper built with Bun + TypeScript. It auto-detects installed LLM CLIs (OpenCode, Claude, Gemini, Codex, Ollama) and proxies commands or prompts to the active provider.
 
-**Tech Stack**: Pure Bash (no additional languages or frameworks)
-
-### Supported Backends (Priority Order)
-1. **opencode** - OpenCode CLI
-2. **claude** - Anthropic's Claude Code CLI
-3. **gemini** - Google's Gemini CLI
-4. **codex** - OpenAI Codex CLI
-5. **ollama** - Local Ollama
-6. **custom** - Any OpenAI-compatible API (e.g., localhost:8000)
-
----
+**Tech Stack**: Bun, TypeScript, @clack/prompts, conf, picocolors.
 
 ## Build / Lint / Test Commands
 
-This is a simple bash script project with no build system, package manager, or formal test suite.
-
+### Build
 ```bash
-# Validate bash syntax
-bash -n llm
+# Local build (current OS)
+bun run build
 
-# Run ShellCheck (if installed) - RECOMMENDED before committing
-shellcheck llm
-
-# Manual execution test
-./llm "Hello, how are you?"
-echo "test input" | ./llm -p "analyze this"
-./llm "describe this image" -f /path/to/image.png
+# All platforms
+bun run build:all
 ```
 
-### No Formal Tests
-There is no automated test suite. Test changes manually by running the script with various inputs:
-- Direct text argument
-- Piped input from stdin
-- Image file attachment (`-f` flag)
-- Different backends (`-b opencode`, `-b ollama`, etc.)
-
----
-
-## Architecture
-
-The script uses a **modular adapter pattern** to support multiple LLM backends.
-
-### Auto-Detection
-On startup (if no `-b` flag), the script probes for installed tools in priority order:
-```
-opencode → claude → gemini → codex → ollama → custom (curl+jq)
+### Typecheck (primary “lint”)
+```bash
+bun run typecheck
 ```
 
-### Backend Adapters
-Each backend has a dedicated function (`call_opencode`, `call_claude`, etc.) that:
-1. Receives standardized arguments: `model`, `prompt`, `image_file`
-2. Translates them to the backend's specific CLI flags
-3. Returns the LLM response to stdout
+### Tests
+There is no automated test suite. Use manual CLI checks:
+```bash
+# Basic prompt
+bun run dev "hello"
 
-### Adding a New Backend
-To add support for a new LLM tool:
+# Pipe input
+printf "hello" | bun run dev "count words"
 
-1. **Add detection** in `detect_backend()`:
-   ```bash
-   elif command -v newtool &>/dev/null; then
-       echo "newtool"
-   ```
+# Proxy subcommand
+bun run dev --version
+bun run dev session list
 
-2. **Create adapter function**:
-   ```bash
-   call_newtool() {
-       local model="$1"
-       local prompt="$2"
-       local image="$3"
-       # Map to newtool's CLI flags
-       newtool --prompt "$prompt"
-   }
-   ```
+# Config UI
+bun run dev --self
+```
 
-3. **Add to dispatcher** (case statement at bottom):
-   ```bash
-   newtool) call_newtool "$MODEL" "$FULL_PROMPT" "$IMAGE_FILE" ;;
-   ```
+### Single-test equivalent
+No test runner exists. Validate a single behavior by running the specific CLI flow you changed (examples above).
 
-4. **Update validation** (valid backends list)
+## Installer
 
-5. **Document** in help text and AGENTS.md
+The `install` script downloads the correct zipped binary for the current OS/arch and installs to `~/.local/bin/llm`.
+```bash
+curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
+```
 
----
+## Repository Structure
+
+```
+./
+├── src/                # TypeScript source
+│   ├── index.ts        # CLI entry + dispatch
+│   ├── config.ts       # conf-based settings
+│   ├── ui/setup.ts     # --self TUI
+│   └── providers/      # Provider adapters + registry
+├── install             # Installer script (zip-based)
+├── README.md
+└── package.json
+```
+
+## Provider Behavior
+
+- `llm --self` opens the management TUI (set default provider, install hints).
+- `llm --provider <name> …` forces a provider for that call.
+- Any other flags/args are passed through to the provider unless the adapter decides it is a prompt.
+- Prompt vs subcommand is determined by heuristics in `src/providers/base.ts`.
 
 ## Code Style Guidelines
 
-### Bash Script Conventions
+### General
+- Keep the CLI thin: prefer small, focused adapters over large abstractions.
+- Do not introduce new dependencies without user approval.
+- Avoid refactors during bugfixes; change only what is required.
 
-Follow the patterns established in the existing `llm` script.
+### TypeScript Conventions
+- **Types**: Use explicit types for public APIs and exported functions.
+- **Nullability**: Use `undefined` for optional values; avoid `null` unless required by external API.
+- **Async**: Use `async/await`; avoid raw `.then` chains.
+- **Errors**: Catch and display actionable errors; do not swallow errors.
+- **Imports**: Use ESM syntax; keep imports grouped by source (builtins, external, internal).
 
-#### Shebang & Header
-```bash
-#!/bin/bash
+### Naming
+- **Functions**: `camelCase` verbs (e.g., `detectProvider`, `readStdin`).
+- **Types/Interfaces**: `PascalCase` nouns (e.g., `Provider`, `LLMConfig`).
+- **Constants**: `UPPER_SNAKE_CASE` only for true constants or config-like values.
+- **Files**: `kebab-case` is not used; follow existing filenames.
 
-# Script Name / Purpose
-# 
-# Brief description of what this script does.
-#
-# Usage:
-#   example command usage
-```
+### Formatting
+- 2-space indentation in JSON and YAML.
+- 2-space indentation in TypeScript (default TS formatting).
+- Keep lines readable; no strict max length but avoid >120 unless necessary.
 
-#### Variable Naming
-- **UPPERCASE** for global/exported variables and constants
-- **lowercase** for local variables (in functions)
-- Use descriptive names: `IMAGE_FILE` not `IMG`
+### Error Handling
+- Prefer early returns with clear messages (`pc.red`, `p.log.error`).
+- Preserve exit codes from spawned processes.
+- Avoid hidden side-effects in error flows.
 
-```bash
-# Good
-PROMPT="Summarize the following:"
-MODEL="gpt-5.2"
-IMAGE_FILE=""
+### Process Execution
+- Use `Bun.spawn` with `stdin/stdout/stderr: "inherit"` for proxy behavior.
+- Do not capture output unless required for logic.
 
-# Avoid
-p="prompt"
-m="model"
-```
+## Configuration
 
-#### Quoting
-- **Always quote variables**: `"$VAR"` not `$VAR`
-- Use `"${VAR}"` when concatenating or to avoid ambiguity
-- Quote command substitutions: `"$(command)"`
+Configuration is stored via `conf` in:
+- `~/.config/llm-cli/config.json` (projectSuffix is empty by design).
 
-```bash
-# Good
-echo "$FULL_PROMPT"
-INPUT="$CMD_INPUT"
-RESPONSE=$(curl -s "http://127.0.0.1:8000/v1/chat/completions")
+Do not store secrets in config unless explicitly requested.
 
-# Bad
-echo $FULL_PROMPT
-```
+## Release Notes
 
-#### Conditionals
-- Use `[[ ]]` for conditionals (bash-specific, safer)
-- Use `-n` for non-empty, `-z` for empty string checks
-- Use `&&` and `||` for chaining
+- Releases are tagged via `v<package.json version>`.
+- Zipped binaries only (raw binaries are removed from release assets).
+- Manual release workflow exists in `.github/workflows/release.yml`.
 
-```bash
-# Preferred
-if [[ -n "$CMD_INPUT" ]]; then
-    INPUT="$CMD_INPUT"
-elif [[ ! -t 0 ]]; then
-    INPUT=$(cat)
-fi
+## Workflow / CI
 
-# One-liners with short-circuit
-[[ -n $LLM_BACKEND ]] && echo "Backend: $LLM_BACKEND"
-```
+No CI is enforced besides the manual release workflow. Run `bun run typecheck` before shipping.
 
-#### Argument Parsing
-Use `while` with `case` for argument parsing:
+## Cursor / Copilot Rules
 
-```bash
-while [[ "$#" -gt 0 ]]; do
-    case $1 in
-        -p|--prompt) PROMPT="$2"; shift ;; 
-        -m|--model) MODEL="$2"; shift ;; 
-        -f|--file) IMAGE_FILE="$2"; shift ;; 
-        *) CMD_INPUT="${CMD_INPUT}${CMD_INPUT:+ }$1" ;; 
-    esac
-    shift
-done
-```
+No `.cursor/rules`, `.cursorrules`, or `.github/copilot-instructions.md` found.
 
-#### Error Handling
-- Check for required files before use
-- Provide helpful error messages with usage hints
-- Exit with non-zero status on errors
+## Agent Notes
 
-```bash
-if [[ ! -f "$IMAGE_FILE" ]]; then
-    echo "Error: File $IMAGE_FILE not found."
-    exit 1
-fi
-```
-
-#### Exit Codes
-- `0` = success
-- `1` = general error (file not found, invalid input, API error)
-
-#### Comments
-- Use `#` comments to explain non-obvious logic
-- Add section headers for major blocks
-
----
-
-## Formatting
-
-- **Indentation**: 4 spaces (no tabs)
-- **Line length**: No strict limit, but aim for readability
-- **Blank lines**: Separate logical sections with one blank line
-- **Semicolons**: Use `;` before `;;` in case statements for consistency
-
----
-
-## External Dependencies
-
-The script requires these tools to be available:
-- `jq` - JSON processing (required for `custom` backend)
-- `curl` - HTTP requests (required for `custom` backend)
-- `base64` - Image encoding (for multimodal with `custom` backend)
-- `file` - MIME type detection (for multimodal with `custom` backend)
-
-For other backends, only the respective CLI tool needs to be installed.
-
----
-
-## API Integration
-
-The script communicates with a local LLM proxy at `http://127.0.0.1:8000`. The payload follows OpenAI-compatible format:
-
-```json
-{
-  "model": "gpt-5.2",
-  "responses_tools": [{"type": "web_search"}],
-  "responses_tool_choice": "auto",
-  "messages": [{"role": "user", "content": "..."}]
-}
-```
-
-When modifying API calls:
-- Use `jq -n` with `--arg` for safe JSON construction (prevents injection)
-- Never construct JSON via string concatenation
-- Handle API errors gracefully (check for "null" responses)
-
----
-
-## Common Patterns
-
-### Reading from Stdin or Arguments
-```bash
-if [[ -n "$CMD_INPUT" ]]; then
-    INPUT="$CMD_INPUT"
-elif [[ ! -t 0 ]]; then
-    INPUT=$(cat)
-fi
-```
-
-### Multimodal Payloads
-For image support, encode as base64 data URL:
-```bash
-MIME_TYPE=$(file --mime-type -b "$IMAGE_FILE")
-B64_DATA=$(base64 -i "$IMAGE_FILE")
-# Then construct: "data:$MIME_TYPE;base64,$B64_DATA"
-```
-
----
-
-## Git Workflow
-
-- **Commit messages**: Use imperative mood ("Add feature" not "Added feature")
-- **No CI/CD**: No automated pipelines - run `shellcheck` locally before committing
-- **Branch strategy**: Not specified - assume trunk-based development
-
----
-
-## Troubleshooting
-
-If the script fails:
-1. Check that the local LLM proxy is running at `http://127.0.0.1:8000`
-2. Verify `jq` is installed: `which jq`
-3. Test API connectivity: `curl -s http://127.0.0.1:8000/v1/models`
-
----
-
-## Agent-Specific Notes
-
-When working on this codebase as an AI agent:
-
-1. **Keep it simple** - This is intentionally a minimal bash script. Don't over-engineer.
-2. **Test manually** - No test suite exists. Verify changes work via command line.
-3. **Preserve compatibility** - Maintain backward compatibility with existing usage patterns.
-4. **Quote everything** - Bash quoting issues are the #1 source of bugs.
-5. **Use ShellCheck** - Run `shellcheck llm` to catch common bash pitfalls.
+- Update AGENTS.md when architecture or commands change.
+- Keep README installation instructions in sync with the `install` script.
+- When modifying providers, update `src/providers/index.ts` order if needed.

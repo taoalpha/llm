@@ -7,48 +7,51 @@ import { providers, getProvidersWithStatus, detectProvider, getProvider } from "
  * The --self TUI: Interactive management for the llm wrapper
  */
 export async function runSelfUI(): Promise<void> {
-  p.intro(pc.bgCyan(pc.black(" llm-cli ")));
+  p.intro(pc.cyan(`
+   █   █     █   █
+   █   █     ██ ██
+   █   █     █ █ █
+   ███ ███   █   █ ${pc.dim("v0.0.1")}
+  `));
 
-  const currentDefault = getDefaultProvider();
-  const providersWithStatus = await getProvidersWithStatus();
-  const installedProviders = providersWithStatus.filter((item) => item.installed);
-  const autoDetected = await detectProvider();
+  while (true) {
+    const currentDefault = getDefaultProvider();
+    const providersWithStatus = await getProvidersWithStatus();
+    const installedProviders = providersWithStatus.filter((item) => item.installed);
+    const autoDetected = await detectProvider();
 
-  // Show current status
-  p.note(
-    [
-      `${pc.dim("Config:")} ${getConfigPath()}`,
-      `${pc.dim("Default Provider:")} ${currentDefault ? pc.green(currentDefault) : pc.yellow("Auto-detect")}`,
-      `${pc.dim("Auto-detected:")} ${autoDetected ? pc.cyan(autoDetected.name) : pc.red("None")}`,
-    ].join("\n"),
-    "Status"
-  );
+    p.note(
+      [
+        `${pc.blue("Config Path:")}      ${getConfigPath()}`,
+        `${pc.blue("Default Provider:")} ${currentDefault ? pc.green(currentDefault) : pc.magenta("Auto-detect")}`,
+        `${pc.blue("System Detected:")}  ${autoDetected ? pc.cyan(autoDetected.name) : pc.red("None")}`,
+      ].join("\n"),
+      "System Status"
+    );
 
-  // Main menu
-  const action = await p.select({
-    message: "What would you like to do?",
-    options: [
-      { value: "set-default", label: "Set Default Provider" },
-      { value: "list", label: "List Providers" },
-      { value: "install", label: "Install a Provider" },
-      { value: "exit", label: "Exit" },
-    ],
-  });
+    const action = await p.select({
+      message: "Main Menu",
+      options: [
+        { value: "set-default", label: "Set Default Provider" },
+        { value: "install", label: "Install Provider" },
+        { value: "list", label: "List Available Providers" },
+        { value: "exit", label: "Exit" },
+      ],
+    });
 
-  if (p.isCancel(action) || action === "exit") {
-    p.outro(pc.dim("Goodbye!"));
-    return;
+    if (p.isCancel(action) || action === "exit") {
+      p.outro(pc.dim("Goodbye!"));
+      return;
+    }
+
+    if (action === "set-default") {
+      await handleSetDefault(installedProviders, currentDefault);
+    } else if (action === "list") {
+      await handleListProviders(providersWithStatus, currentDefault);
+    } else if (action === "install") {
+      await handleInstallProvider(providersWithStatus);
+    }
   }
-
-  if (action === "set-default") {
-    await handleSetDefault(installedProviders, currentDefault);
-  } else if (action === "list") {
-    await handleListProviders(providersWithStatus, currentDefault);
-  } else if (action === "install") {
-    await handleInstallProvider(providersWithStatus);
-  }
-
-  p.outro(pc.green("Done!"));
 }
 
 async function handleSetDefault(
@@ -61,7 +64,8 @@ async function handleSetDefault(
   }
 
   const options = [
-    { value: "__auto__", label: `${pc.yellow("Auto-detect")} ${pc.dim("(Use first available)")}` },
+    { value: "back", label: pc.dim("← Back to Main Menu") },
+    { value: "__auto__", label: `${pc.magenta("Auto-detect")} ${pc.dim("(Use first available)")}` },
     ...installed.map((item) => ({
       value: item.provider.name,
       label: `${item.provider.name} ${pc.dim(`- ${item.provider.description}`)}`,
@@ -74,7 +78,7 @@ async function handleSetDefault(
     initialValue: currentDefault ?? "__auto__",
   });
 
-  if (p.isCancel(choice)) return;
+  if (p.isCancel(choice) || choice === "back") return;
 
   if (choice === "__auto__") {
     clearDefaultProvider();
@@ -94,7 +98,7 @@ async function handleListProviders(
   for (const { provider, installed } of providersWithStatus) {
     const status = installed ? pc.green("✓ Installed") : pc.dim("○ Not installed");
     const isDefault = provider.name === currentDefault ? pc.yellow(" (default)") : "";
-    lines.push(`  ${provider.name}${isDefault}`);
+    lines.push(`  ${pc.bold(provider.name)}${isDefault}`);
     lines.push(`    ${pc.dim(provider.description)}`);
     lines.push(`    ${status}`);
     if (!installed) {
@@ -104,6 +108,11 @@ async function handleListProviders(
   }
 
   p.note(lines.join("\n"), "Providers");
+  
+  await p.select({
+    message: "Navigation",
+    options: [{ value: "back", label: "Back to Main Menu" }]
+  });
 }
 
 async function handleInstallProvider(
@@ -118,14 +127,17 @@ async function handleInstallProvider(
 
   const choice = await p.select({
     message: "Select a provider to install:",
-    options: notInstalled.map(({ provider }) => ({
-      value: provider.name,
-      label: `${provider.name} ${pc.dim(`- ${provider.description}`)}`,
-      hint: provider.installHint,
-    })),
+    options: [
+      { value: "back", label: pc.dim("← Back to Main Menu") },
+      ...notInstalled.map(({ provider }) => ({
+        value: provider.name,
+        label: `${provider.name} ${pc.dim(`- ${provider.description}`)}`,
+        hint: provider.installHint,
+      })),
+    ],
   });
 
-  if (p.isCancel(choice)) return;
+  if (p.isCancel(choice) || choice === "back") return;
 
   const provider = notInstalled.find((p) => p.provider.name === choice)?.provider;
   if (!provider) return;
@@ -143,7 +155,6 @@ async function handleInstallProvider(
     return;
   }
 
-  // Run the installation command
   p.log.step(`Running: ${provider.installHint}`);
   
   const proc = Bun.spawn(["sh", "-c", provider.installHint], {

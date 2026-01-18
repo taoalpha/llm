@@ -13,29 +13,21 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 
 ### For Humans
 
-**macOS (Apple Silicon)**
+**One-line install (macOS/Linux/Windows WSL)**
 ```bash
-curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-darwin-arm64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
+curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
 ```
 
-**macOS (Intel)**
+**Specific version**
 ```bash
-curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-darwin-x64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
-```
-
-**Linux (x64)**
-```bash
-curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-linux-x64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
-```
-
-**Linux (ARM64)**
-```bash
-curl -fsSL https://github.com/taoalpha/llm/releases/latest/download/llm-linux-arm64 -o ~/.local/bin/llm && chmod +x ~/.local/bin/llm
+curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --version 0.0.1
 ```
 
 **Windows (PowerShell)**
 ```powershell
-Invoke-WebRequest -Uri https://github.com/taoalpha/llm/releases/latest/download/llm-windows-x64.exe -OutFile $env:LOCALAPPDATA\llm.exe
+Invoke-WebRequest -Uri https://github.com/taoalpha/llm/releases/latest/download/llm-windows-x64.zip -OutFile $env:TEMP\llm-windows-x64.zip
+Expand-Archive -Path $env:TEMP\llm-windows-x64.zip -DestinationPath $env:LOCALAPPDATA
+Rename-Item -Path $env:LOCALAPPDATA\llm-windows-x64.exe -NewName llm.exe
 ```
 
 Make sure `~/.local/bin` is in your PATH:
@@ -50,7 +42,10 @@ Add to your `AGENTS.md` or system prompt:
 ```markdown
 ## LLM CLI Tool
 
-The `llm` command is a universal wrapper for LLM CLI tools. Use it to:
+Install:
+- `curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash`
+
+Use it to:
 - Send prompts: `llm "your question here"`
 - Pipe input: `cat file.txt | llm "summarize this"`
 - Run provider commands: `llm session list`, `llm login`, etc.
@@ -129,6 +124,10 @@ bun run build
 # Build for all platforms
 bun run build:all
 ```
+
+## Installer
+
+The `install` script downloads the right zipped binary for the current OS/arch and installs it to `~/.local/bin/llm`.
 
 ## License
 

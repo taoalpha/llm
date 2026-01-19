@@ -1,50 +1,44 @@
-import { Provider, commandExists, spawnInherit, looksLikePrompt } from "./base";
+import { Provider, CommandArgs, commandExists, spawnInherit, looksLikePrompt, looksLikeSubcommand, splitArgs } from "./base";
 
-function splitModelArgs(args: string[]): { modelArgs: string[]; promptArgs: string[] } {
-  const modelArgs: string[] = [];
-  const promptArgs: string[] = [];
-
-  let i = 0;
-  while (i < args.length) {
-    const arg = args[i];
-    if (arg === "--model" && i + 1 < args.length) {
-      modelArgs.push(arg, args[i + 1]);
-      i += 2;
-      continue;
-    }
-
-    if (arg.startsWith("--model=")) {
-      modelArgs.push(arg);
-      i += 1;
-      continue;
-    }
-
-    promptArgs.push(arg);
-    i += 1;
-  }
-
-  return { modelArgs, promptArgs };
-}
+const OPENCODE_COMMAND = "opencode";
 
 export const opencodeProvider: Provider = {
   name: "opencode",
   description: "OpenCode CLI",
-  command: "opencode",
+  command: OPENCODE_COMMAND,
   installHint: "brew install opencode-ai/tap/opencode",
 
   async isInstalled() {
     return commandExists(this.command);
   },
 
+  commands: {
+    async run({ rest, options }: CommandArgs) {
+      await spawnInherit(OPENCODE_COMMAND, ["run", rest, ...options]);
+    },
+  },
+
   async forward(args: string[], pipeData?: string) {
-    const { modelArgs, promptArgs } = splitModelArgs(args);
-    const isPrompt = pipeData || (promptArgs.length > 0 && looksLikePrompt(promptArgs));
+    const firstArg = args[0];
+    const isSubcommand = firstArg && looksLikeSubcommand(firstArg);
+
+    if (isSubcommand) {
+      if (pipeData) {
+        const restArgs = args.slice(1);
+        const fullArgv = [...restArgs, pipeData].filter(Boolean).join("\n");
+        await spawnInherit(this.command, [firstArg, fullArgv]);
+      } else {
+        await spawnInherit(this.command, args);
+      }
+      return;
+    }
+
+    const isPrompt = pipeData || (args.length > 0 && looksLikePrompt(args));
 
     if (isPrompt) {
-      const prompt = pipeData
-        ? [...promptArgs, pipeData].filter(Boolean).join("\n")
-        : promptArgs.join(" ");
-      await spawnInherit(this.command, ["run", ...modelArgs, prompt]);
+      const { rest, options } = splitArgs(args);
+      const fullArgv = pipeData ? [rest, pipeData].filter(Boolean).join("\n") : rest;
+      await this.commands.run({ rest: fullArgv, options });
     } else {
       await spawnInherit(this.command, args);
     }

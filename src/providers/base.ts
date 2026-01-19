@@ -1,27 +1,53 @@
 import { $ } from "bun";
 
+export interface CommandArgs {
+  rest: string;
+  options: string[];
+}
+
+export type ProviderCommandHandler = (args: CommandArgs) => Promise<void>;
+
+export interface ProviderCommands {
+  run: ProviderCommandHandler;
+}
+
 export interface Provider {
-  /** Unique identifier for the provider */
   name: string;
-  /** Human-readable description */
   description: string;
-  /** The CLI command name */
   command: string;
-  /** Installation instructions */
   installHint: string;
-  /** Check if this provider's CLI is installed */
   isInstalled(): Promise<boolean>;
-  /** 
-   * Forward args to the underlying CLI.
-   * @param args - Raw arguments to pass through
-   * @param pipeData - Optional piped input from stdin
-   */
+  commands: ProviderCommands;
   forward(args: string[], pipeData?: string): Promise<void>;
 }
 
 /**
- * Default heuristic to detect if args look like a prompt vs a subcommand
+ * Split args into rest (prompt/content) and options (CLI flags like --model)
  */
+export function splitArgs(args: string[]): CommandArgs {
+  const options: string[] = [];
+  const rest: string[] = [];
+
+  let i = 0;
+  while (i < args.length) {
+    const arg = args[i];
+    if (arg.startsWith("-")) {
+      options.push(arg);
+      if (!arg.includes("=") && i + 1 < args.length && !args[i + 1].startsWith("-")) {
+        options.push(args[i + 1]);
+        i += 2;
+      } else {
+        i += 1;
+      }
+    } else {
+      rest.push(arg);
+      i += 1;
+    }
+  }
+
+  return { rest: rest.join(" "), options };
+}
+
 export function looksLikePrompt(args: string[]): boolean {
   if (args.length === 0) return false;
   
@@ -34,6 +60,24 @@ export function looksLikePrompt(args: string[]): boolean {
   }
   
   return false;
+}
+
+export function looksLikeSubcommand(arg: string): boolean {
+  if (!arg || arg.startsWith("-")) return false;
+  if (arg.includes(" ") || arg.includes("?") || arg.includes("!") || arg.includes("\n")) return false;
+  if (arg.startsWith('"') || arg.startsWith("'")) return false;
+  return true;
+}
+
+/**
+ * Unified commands that llm intercepts and translates per-provider.
+ * e.g., `llm run "prompt"` becomes `opencode run`, `claude -p`, `gemini -p`, etc.
+ */
+export const LLM_COMMANDS = ["run"] as const;
+export type LLMCommand = (typeof LLM_COMMANDS)[number];
+
+export function isLLMCommand(arg: string): arg is LLMCommand {
+  return LLM_COMMANDS.includes(arg as LLMCommand);
 }
 
 /**

@@ -1,11 +1,13 @@
 #!/usr/bin/env bun
 
 import pc from "picocolors";
+import pkg from "../package.json";
 import { getDefaultProvider } from "./config";
 import { getProvider, detectProvider } from "./providers";
+import { isLLMCommand, splitArgs } from "./providers/base";
 import { runSelfUI } from "./ui/setup";
 
-const VERSION = "0.0.2";
+const VERSION = pkg.version;
 
 /**
  * Parse and extract llm-specific flags from argv
@@ -115,6 +117,16 @@ async function main() {
 
   // Read piped input if available
   const pipeData = await readStdin();
+
+  // Handle unified llm commands (e.g., `llm run "prompt"`)
+  const firstArg = passthrough[0];
+  if (firstArg && isLLMCommand(firstArg)) {
+    const restArgs = passthrough.slice(1);
+    const { rest, options } = splitArgs(restArgs);
+    const finalRest = pipeData ? [rest, pipeData].filter(Boolean).join("\n") : rest;
+    await activeProvider.commands.run({ rest: finalRest, options });
+    return;
+  }
 
   // Forward to the active provider
   await activeProvider.forward(passthrough, pipeData);

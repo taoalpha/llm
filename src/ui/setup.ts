@@ -1,17 +1,15 @@
 import * as p from "@clack/prompts";
 import pc from "picocolors";
+import pkg from "../../package.json";
 import { getDefaultProvider, setDefaultProvider, clearDefaultProvider, getConfigPath } from "../config";
 import { providers, getProvidersWithStatus, detectProvider, getProvider } from "../providers";
 
-/**
- * The --self TUI: Interactive management for the llm wrapper
- */
 export async function runSelfUI(): Promise<void> {
   p.intro(pc.cyan(`
    █   █     █   █
    █   █     ██ ██
    █   █     █ █ █
-   ███ ███   █   █ ${pc.dim("v0.0.1")}
+   ███ ███   █   █ ${pc.dim(`v${pkg.version}`)}
   `));
 
   while (true) {

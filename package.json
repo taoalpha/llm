@@ -11,7 +11,7 @@
     "dev": "bun run src/index.ts",
     "build": "bun build src/index.ts --compile --outfile llm-bin",
     "build:all": "bun run build:macos && bun run build:linux && bun run build:windows",
-    "build:macos": "bun build src/index.ts --compile --target=bun-darwin-arm64 --outfile dist/llm-macos-arm64 && bun build src/index.ts --compile --target=bun-darwin-x64 --outfile dist/llm-macos-x64",
+    "build:macos": "bun build src/index.ts --compile --target=bun-darwin-arm64 --outfile dist/llm-darwin-arm64 && bun build src/index.ts --compile --target=bun-darwin-x64 --outfile dist/llm-darwin-x64",
     "build:linux": "bun build src/index.ts --compile --target=bun-linux-x64 --outfile dist/llm-linux-x64 && bun build src/index.ts --compile --target=bun-linux-arm64 --outfile dist/llm-linux-arm64",
     "build:windows": "bun build src/index.ts --compile --target=bun-windows-x64 --outfile dist/llm-windows-x64.exe",
     "typecheck": "tsc --noEmit"

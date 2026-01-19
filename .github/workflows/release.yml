@@ -34,8 +34,8 @@ jobs:
         run: |
           mkdir -p dist-zip
           cd dist
-          zip -9 ../dist-zip/llm-darwin-arm64.zip llm-macos-arm64
-          zip -9 ../dist-zip/llm-darwin-x64.zip llm-macos-x64
+          zip -9 ../dist-zip/llm-darwin-arm64.zip llm-darwin-arm64
+          zip -9 ../dist-zip/llm-darwin-x64.zip llm-darwin-x64
           zip -9 ../dist-zip/llm-linux-x64.zip llm-linux-x64
           zip -9 ../dist-zip/llm-linux-arm64.zip llm-linux-arm64
           zip -9 ../dist-zip/llm-windows-x64.zip llm-windows-x64.exe

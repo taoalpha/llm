@@ -2,7 +2,8 @@ import Conf from "conf";
 
 export interface LLMConfig {
   defaultProvider?: string;
-  // Future: custom endpoints, API keys, etc.
+  updateCheckLastAt?: number;
+  updateCheckIntervalMs?: number;
 }
 
 const config = new Conf<LLMConfig>({
@@ -25,4 +26,16 @@ export function clearDefaultProvider(): void {
 
 export function getConfigPath(): string {
   return config.path;
+}
+
+export function getUpdateCheckLastAt(): number | undefined {
+  return config.get("updateCheckLastAt");
+}
+
+export function setUpdateCheckLastAt(value: number): void {
+  config.set("updateCheckLastAt", value);
+}
+
+export function getUpdateCheckIntervalMs(): number | undefined {
+  return config.get("updateCheckIntervalMs");
 }

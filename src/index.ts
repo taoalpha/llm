@@ -2,7 +2,7 @@
 
 import pc from "picocolors";
 import pkg from "../package.json";
-import { getDefaultProvider } from "./config";
+import { getDefaultProvider, getUpdateCheckIntervalMs, getUpdateCheckLastAt, setUpdateCheckLastAt } from "./config";
 import { getProvider, detectProvider } from "./providers";
 import { isLLMCommand, splitArgs } from "./providers/base";
 import { runSelfUI } from "./ui/setup";
@@ -68,6 +68,26 @@ async function readStdin(): Promise<string | undefined> {
   return buffer.toString("utf-8").trim();
 }
 
+async function maybeAutoUpdate(): Promise<void> {
+  const now = Date.now();
+  const lastChecked = getUpdateCheckLastAt();
+  const intervalMs = getUpdateCheckIntervalMs() ?? 6 * 60 * 60 * 1000;
+
+  if (lastChecked && now - lastChecked < intervalMs) {
+    return;
+  }
+
+  setUpdateCheckLastAt(now);
+
+  const proc = Bun.spawn(["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"], {
+    stdin: "ignore",
+    stdout: "ignore",
+    stderr: "ignore",
+  });
+
+  await proc.exited;
+}
+
 async function main() {
   // Skip "bun" and script path
   const rawArgs = process.argv.slice(2);
@@ -117,6 +137,8 @@ async function main() {
 
   // Read piped input if available
   const pipeData = await readStdin();
+
+  void maybeAutoUpdate();
 
   // Handle unified llm commands (e.g., `llm run "prompt"`)
   const firstArg = passthrough[0];

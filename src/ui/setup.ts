@@ -4,6 +4,40 @@ import pkg from "../../package.json";
 import { getDefaultProvider, setDefaultProvider, clearDefaultProvider, getConfigPath } from "../config";
 import { providers, getProvidersWithStatus, detectProvider, getProvider } from "../providers";
 
+function compareVersions(a: string, b: string): number {
+  const aParts = a.split(".").map((part) => Number(part));
+  const bParts = b.split(".").map((part) => Number(part));
+  const length = Math.max(aParts.length, bParts.length);
+
+  for (let i = 0; i < length; i += 1) {
+    const aVal = aParts[i] ?? 0;
+    const bVal = bParts[i] ?? 0;
+    if (aVal > bVal) return 1;
+    if (aVal < bVal) return -1;
+  }
+
+  return 0;
+}
+
+async function getLatestVersion(): Promise<string | undefined> {
+  const response = await fetch("https://api.github.com/repos/taoalpha/llm/releases/latest");
+  if (!response.ok) return undefined;
+  const data = (await response.json()) as { tag_name?: string };
+  if (!data.tag_name) return undefined;
+  return data.tag_name.replace(/^v/, "");
+}
+
+async function runUpdate(): Promise<boolean> {
+  p.log.step("Running installer...");
+  const proc = Bun.spawn(["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+  await proc.exited;
+  return proc.exitCode === 0;
+}
+
 export async function runSelfUI(): Promise<void> {
   p.intro(pc.cyan(`
    █   █     █   █
@@ -18,23 +52,41 @@ export async function runSelfUI(): Promise<void> {
     const installedProviders = providersWithStatus.filter((item) => item.installed);
     const autoDetected = await detectProvider();
 
+    let latestVersion: string | undefined;
+    try {
+      latestVersion = await getLatestVersion();
+    } catch {
+      latestVersion = undefined;
+    }
+
+    const updateAvailable =
+      latestVersion && compareVersions(latestVersion, pkg.version) > 0 ? latestVersion : undefined;
+
     p.note(
       [
         `${pc.blue("Config Path:")}      ${getConfigPath()}`,
         `${pc.blue("Default Provider:")} ${currentDefault ? pc.green(currentDefault) : pc.magenta("Auto-detect")}`,
         `${pc.blue("System Detected:")}  ${autoDetected ? pc.cyan(autoDetected.name) : pc.red("None")}`,
+        `${pc.blue("Update Available:")} ${updateAvailable ? pc.green(`v${updateAvailable}`) : pc.dim("None")}`,
       ].join("\n"),
       "System Status"
     );
 
+    const options = [
+      { value: "set-default", label: "Set Default Provider" },
+      { value: "install", label: "Install Provider" },
+      { value: "list", label: "List Available Providers" },
+    ];
+
+    if (updateAvailable) {
+      options.unshift({ value: "update", label: `Update to v${updateAvailable}` });
+    }
+
+    options.push({ value: "exit", label: "Exit" });
+
     const action = await p.select({
       message: "Main Menu",
-      options: [
-        { value: "set-default", label: "Set Default Provider" },
-        { value: "install", label: "Install Provider" },
-        { value: "list", label: "List Available Providers" },
-        { value: "exit", label: "Exit" },
-      ],
+      options,
     });
 
     if (p.isCancel(action) || action === "exit") {
@@ -42,7 +94,15 @@ export async function runSelfUI(): Promise<void> {
       return;
     }
 
-    if (action === "set-default") {
+    if (action === "update") {
+      if (!updateAvailable) continue;
+      const ok = await runUpdate();
+      if (ok) {
+        p.log.success(`Updated to v${updateAvailable}`);
+      } else {
+        p.log.error("Update failed");
+      }
+    } else if (action === "set-default") {
       await handleSetDefault(installedProviders, currentDefault);
     } else if (action === "list") {
       await handleListProviders(providersWithStatus, currentDefault);

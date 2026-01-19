@@ -57,9 +57,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TAG="v${{ steps.version.outputs.version }}"
-          PREV_TAG=$(git tag --list "v*" --sort=-v:refname | grep -v "^$TAG$" | head -n 1)
-          if [[ -n "$PREV_TAG" ]]; then
-            CHANGELOG=$(git log "$PREV_TAG"..HEAD --oneline)
+          LATEST_TAG=$(git tag --list "v*" --sort=-creatordate | head -n 1)
+          if [[ -n "$LATEST_TAG" && "$LATEST_TAG" != "$TAG" ]]; then
+            CHANGELOG=$(git log "$LATEST_TAG"..HEAD --oneline)
           else
             CHANGELOG=$(git log --oneline)
           fi

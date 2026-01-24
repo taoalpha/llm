@@ -3,6 +3,43 @@ import pc from "picocolors";
 import pkg from "../../package.json";
 import { getDefaultProvider, setDefaultProvider, clearDefaultProvider, getConfigPath } from "../config";
 import { providers, getProvidersWithStatus, detectProvider, getProvider } from "../providers";
+import { npmExists } from "../providers/base";
+
+// Ask about oh-my-opencode installation after OpenCode setup
+async function askAboutOhMyOpenCode(): Promise<void> {
+  const shouldInstall = await p.confirm({
+    message: "Would you also like to install 'oh-my-opencode' for enhanced agent orchestration?",
+    initialValue: true,
+  });
+
+  if (p.isCancel(shouldInstall)) {
+    p.log.info("Skipping oh-my-opencode installation.");
+    return;
+  }
+
+  if (!shouldInstall) {
+    p.log.info("You can install it later with: npm install -g oh-my-opencode");
+    return;
+  }
+
+  p.log.step("Installing oh-my-opencode...");
+  const installCommand = "npm install -g oh-my-opencode";
+  
+  const proc = Bun.spawn(["sh", "-c", installCommand], {
+    stdin: "inherit",
+    stdout: "inherit",
+    stderr: "inherit",
+  });
+
+  await proc.exited;
+
+  if (proc.exitCode === 0) {
+    p.log.success("oh-my-opencode installed successfully!");
+    p.log.info("Run 'oh-my-opencode' to start the enhanced agent orchestrator.");
+  } else {
+    p.log.error(`oh-my-opencode installation failed with exit code ${proc.exitCode}`);
+  }
+}
 
 function compareVersions(a: string, b: string): number {
   const aParts = a.split(".").map((part) => Number(part));
@@ -183,6 +220,53 @@ async function handleInstallProvider(
     return;
   }
 
+  // Check if any provider needs npm but npm is not available
+  const needsNpmProviders = notInstalled.filter((p) => p.provider.installHint.startsWith("npm install"));
+  if (needsNpmProviders.length > 0 && !npmExists()) {
+    p.log.warn("npm is not detected on your system.");
+    p.log.warn("Some providers require npm for installation.");
+    
+    const shouldInstallNpm = await p.confirm({
+      message: "Would you like to install npm now?",
+      initialValue: true,
+    });
+
+    if (p.isCancel(shouldInstallNpm) || !shouldInstallNpm) {
+      p.log.info("Skipping npm installation. Some providers won't be available.");
+      return;
+    }
+
+    p.log.step("Installing npm...");
+    
+    const npmInstallCommands = [
+      "curl -fsSL https://raw.githubusercontent.com/npm/cli/v10.9.2/scripts/install.sh | sh",
+      "curl -o- https://npmjs.org/install.sh | sh",
+      "wget -qO- https://npmjs.org/install.sh && sh install.sh"
+    ];
+    
+    for (const cmd of npmInstallCommands) {
+      try {
+        const proc = Bun.spawn(["sh", "-c", cmd], {
+          stdout: "inherit",
+          stderr: "inherit",
+        });
+        await proc.exited;
+        
+        if (proc.exitCode === 0) {
+          p.log.success("npm installed successfully!");
+          return;
+        }
+      } catch {
+        continue;
+      }
+    }
+    
+    if (!npmExists()) {
+      p.log.error("npm installation failed. Please install npm manually.");
+      return;
+    }
+  }
+
   const choice = await p.select({
     message: "Select a provider to install:",
     options: [
@@ -225,6 +309,11 @@ async function handleInstallProvider(
   
   if (proc.exitCode === 0) {
     p.log.success(`${provider.name} installed successfully!`);
+    
+    // Ask about oh-my-opencode if OpenCode was just installed
+    if (provider.name === "opencode") {
+      await askAboutOhMyOpenCode();
+    }
   } else {
     p.log.error(`Installation failed with exit code ${proc.exitCode}`);
   }

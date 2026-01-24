@@ -6,7 +6,7 @@ export const opencodeProvider: Provider = {
   name: "opencode",
   description: "OpenCode CLI",
   command: OPENCODE_COMMAND,
-  installHint: "brew install opencode-ai/tap/opencode",
+  installHint: "curl -fsSL https://opencode.ai/install | bash",
 
   async isInstalled() {
     return commandExists(this.command);

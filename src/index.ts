@@ -4,7 +4,7 @@ import pc from "picocolors";
 import pkg from "../package.json";
 import { getDefaultProvider, getUpdateCheckIntervalMs, getUpdateCheckLastAt, setUpdateCheckLastAt } from "./config";
 import { getProvider, detectProvider } from "./providers";
-import { isLLMCommand, splitArgs } from "./providers/base";
+import { isLLMCommand, splitArgs, npmExists } from "./providers/base";
 import { runSelfUI } from "./ui/setup";
 
 const VERSION = pkg.version;
@@ -48,6 +48,46 @@ function parseArgs(argv: string[]): {
 /**
  * Read all stdin if piped
  */
+async function promptInstallNpm(): Promise<boolean> {
+  console.log(pc.yellow("npm is required to install this provider."));
+        const answer = await new Promise<boolean>((resolve) => {
+    process.stdin.setEncoding("utf8");
+    process.stdin.resume();
+    process.stdout.write("Install npm now? [Y/n]: ");
+    
+    process.stdin.once("data", (data) => {
+      const input = data.toString().trim().toLowerCase();
+      resolve(input === "y" || input === "yes" || input === "");
+    });
+  });
+  
+  return answer;
+}
+
+async function installNpm(): Promise<void> {
+  const npmInstallCommands = [
+    "curl -fsSL https://raw.githubusercontent.com/npm/cli/v10.9.2/scripts/install.sh | sh",
+    "curl -o- https://npmjs.org/install.sh | sh",
+    "wget -qO- https://npmjs.org/install.sh && sh install.sh"
+  ];
+  
+  for (const cmd of npmInstallCommands) {
+    try {
+      const proc = Bun.spawn(["sh", "-c", cmd], {
+        stdout: "inherit",
+        stderr: "inherit",
+      });
+      await proc.exited;
+      
+      if (proc.exitCode === 0) {
+        return;
+      }
+    } catch {
+      continue;
+    }
+  }
+}
+
 async function readStdin(): Promise<string | undefined> {
   // Check if stdin is a TTY (interactive terminal)
   if (process.stdin.isTTY) {
@@ -112,6 +152,32 @@ async function main() {
     }
     if (!(await activeProvider.isInstalled())) {
       console.error(pc.red(`Error: Provider "${providerFlag}" is not installed`));
+      
+      // Check if we need npm for this provider
+      const needsNpm = activeProvider.installHint.startsWith("npm install");
+      if (needsNpm && !npmExists()) {
+        console.error(pc.yellow("Note: npm is not detected on your system."));
+        console.error(pc.dim("npm is required to install this provider."));
+        
+        const shouldInstallNpm = await promptInstallNpm();
+        if (!shouldInstallNpm) {
+          console.error(pc.dim("Installation cancelled. Please install npm manually and try again."));
+          process.exit(1);
+        }
+        
+        // Try to install npm
+        console.log(pc.cyan("Installing npm..."));
+        await installNpm();
+        
+        // Verify npm installation
+        if (!npmExists()) {
+          console.error(pc.red("npm installation failed. Please install npm manually."));
+          process.exit(1);
+        }
+        
+        console.log(pc.green("npm installed successfully!"));
+      }
+      
       console.error(pc.dim(`Install with: ${activeProvider.installHint}`));
       process.exit(1);
     }
@@ -130,9 +196,9 @@ async function main() {
   }
 
   if (!activeProvider) {
-    console.error(pc.red("Error: No LLM provider found."));
-    console.error(pc.dim("Run 'llm --self' to set up a provider."));
-    process.exit(1);
+    console.log(pc.yellow("No LLM providers found. Opening setup..."));
+    await runSelfUI();
+    return;
   }
 
   // Read piped input if available

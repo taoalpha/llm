@@ -6,7 +6,7 @@ export const claudeProvider: Provider = {
   name: "claude",
   description: "Claude Code CLI by Anthropic",
   command: CLAUDE_COMMAND,
-  installHint: "npm install -g @anthropic-ai/claude-code",
+  installHint: "curl -fsSL https://claude.ai/install.sh | bash",
 
   async isInstalled() {
     return commandExists(this.command);

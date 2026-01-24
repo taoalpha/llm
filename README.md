@@ -80,11 +80,29 @@ llm --self
 
 | Provider | Command | Install |
 |----------|---------|---------|
-| OpenCode | `opencode` | `brew install opencode-ai/tap/opencode` |
-| Claude | `claude` | `npm install -g @anthropic-ai/claude-code` |
+| OpenCode | `opencode` | `curl -fsSL https://opencode.ai/install | bash` |
+| Claude | `claude` | `curl -fsSL https://claude.ai/install.sh | bash` |
 | Gemini | `gemini` | `npm install -g @google/gemini-cli` |
 | Codex | `codex` | `npm install -g @openai/codex` |
-| Ollama | `ollama` | `brew install ollama` |
+| Ollama | `ollama` | `curl -fsSL https://ollama.com/install.sh | sh` |
+
+## npm Installation
+
+Some providers (Gemini, Codex) require npm for installation. The LLM CLI will automatically detect if npm is missing and prompt you to install it.
+
+### Termux/Android Support
+
+For Termux on Android devices, you may need to install `node` and `npm` first:
+
+```bash
+# Install Node.js
+pkg install nodejs-lts
+
+# Install npm (if not included)
+pkg install npm
+```
+
+After installing Node.js and npm, the LLM CLI will work normally with npm-based providers.
 
 The tool auto-detects providers in the order listed above.
 

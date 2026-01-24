@@ -6,7 +6,7 @@ export const ollamaProvider: Provider = {
   name: "ollama",
   description: "Ollama (Local LLMs)",
   command: OLLAMA_COMMAND,
-  installHint: "brew install ollama",
+  installHint: "curl -fsSL https://ollama.com/install.sh | sh",
 
   async isInstalled() {
     return commandExists(this.command);

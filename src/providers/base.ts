@@ -93,6 +93,13 @@ export async function commandExists(cmd: string): Promise<boolean> {
 }
 
 /**
+ * Check if npm is available
+ */
+export async function npmExists(): Promise<boolean> {
+  return await commandExists("npm") || await commandExists("bunx") || await commandExists("npx");
+}
+
+/**
  * Spawn a process with full TTY inheritance (for interactive commands)
  */
 export async function spawnInherit(cmd: string, args: string[]): Promise<void> {

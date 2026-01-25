@@ -9,10 +9,10 @@ Usage: Install-Llm [options]
 Options:
   -h, --help              Show this help
   -v, --version <version> Install a specific version (e.g., 0.0.1)
-  --install-bun           Install Bun runtime if missing
+  --install-runtime       Install Bun runtime if missing
 
 Examples:
-  powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --install-bun"
+  powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --install-runtime"
   powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --version 0.0.1"
 "@
 }
@@ -23,7 +23,7 @@ function Install-Llm {
   )
 
   $requestedVersion = $env:VERSION
-  $installBun = $false
+  $installRuntime = $false
 
   for ($i = 0; $i -lt $ArgsList.Length; $i++) {
     $arg = $ArgsList[$i]
@@ -48,7 +48,7 @@ function Install-Llm {
           return
         }
       }
-      "--install-bun" { $installBun = $true }
+      "--install-runtime" { $installRuntime = $true }
       default {
         Write-Warning "Unknown option '$arg'"
       }
@@ -60,7 +60,7 @@ function Install-Llm {
     $hasBun = $true
   }
 
-  if ($installBun -and -not $hasBun) {
+  if ($installRuntime -and -not $hasBun) {
     Write-Host "Bun runtime not found. Installing Bun..."
     try {
       irm https://bun.sh/install.ps1 | iex

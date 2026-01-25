@@ -28,11 +28,14 @@ curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
 curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --version 0.0.1
 ```
 
+**Windows (PowerShell) - recommended (installs Bun if missing)**
+```powershell
+powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --install-bun"
+```
+
 **Windows (PowerShell)**
 ```powershell
-Invoke-WebRequest -Uri https://github.com/taoalpha/llm/releases/latest/download/llm-windows-x64.zip -OutFile $env:TEMP\llm-windows-x64.zip
-Expand-Archive -Path $env:TEMP\llm-windows-x64.zip -DestinationPath $env:LOCALAPPDATA
-Rename-Item -Path $env:LOCALAPPDATA\llm-windows-x64.exe -NewName llm.exe
+powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"
 ```
 
 Make sure `~/.local/bin` is in your PATH:

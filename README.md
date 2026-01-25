@@ -15,7 +15,7 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 
 **Recommended install (installs Bun if missing)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-bun
+curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-runtime
 ```
 
 **One-line install (macOS/Linux/Windows WSL)**
@@ -30,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash 
 
 **Windows (PowerShell) - recommended (installs Bun if missing)**
 ```powershell
-powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --install-bun"
+powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --install-runtime"
 ```
 
 **Windows (PowerShell)**
@@ -51,7 +51,7 @@ Add to your `AGENTS.md` or system prompt:
 ## LLM CLI Tool
 
 Install:
-- `curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-bun`
+- `curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-runtime`
 
 Use it to:
 - Send prompts: `llm "your question here"`

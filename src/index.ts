@@ -4,7 +4,7 @@ import pc from "picocolors";
 import pkg from "../package.json";
 import { getDefaultProvider, getUpdateCheckIntervalMs, getUpdateCheckLastAt, setUpdateCheckLastAt } from "./config";
 import { getProvider, detectProvider } from "./providers";
-import { isLLMCommand, splitArgs, npmExists } from "./providers/base";
+import { isLLMCommand, splitArgs, npmExists, getInstallHint } from "./providers/base";
 import { runSelfUI } from "./ui/setup";
 
 const VERSION = pkg.version;
@@ -154,7 +154,7 @@ async function main() {
       console.error(pc.red(`Error: Provider "${providerFlag}" is not installed`));
       
       // Check if we need npm for this provider
-      const needsNpm = activeProvider.installHint.startsWith("npm install");
+      const needsNpm = getInstallHint(activeProvider).startsWith("npm install");
       if (needsNpm && !npmExists()) {
         console.error(pc.yellow("Note: npm is not detected on your system."));
         console.error(pc.dim("npm is required to install this provider."));
@@ -178,7 +178,7 @@ async function main() {
         console.log(pc.green("npm installed successfully!"));
       }
       
-      console.error(pc.dim(`Install with: ${activeProvider.installHint}`));
+      console.error(pc.dim(`Install with: ${getInstallHint(activeProvider)}`));
       process.exit(1);
     }
   } else {

@@ -3,7 +3,7 @@ import pc from "picocolors";
 import pkg from "../../package.json";
 import { getDefaultProvider, setDefaultProvider, clearDefaultProvider, getConfigPath } from "../config";
 import { getProvidersWithStatus, detectProvider } from "../providers";
-import { npmExists } from "../providers/base";
+import { npmExists, getInstallHint, getUninstallHint, getShellCommand } from "../providers/base";
 import type { Provider } from "../providers/base";
 
 // Ask about oh-my-opencode installation after OpenCode setup
@@ -201,7 +201,7 @@ async function handleListProviders(
     lines.push(`    ${pc.dim(provider.description)}`);
     lines.push(`    ${status}`);
     if (!installed) {
-      lines.push(`    ${pc.dim(`Install: ${provider.installHint}`)}`);
+      lines.push(`    ${pc.dim(`Install: ${getInstallHint(provider)}`)}`);
     }
     lines.push("");
   }
@@ -225,7 +225,7 @@ async function handleInstallProvider(
   }
 
   // Check if any provider needs npm but npm is not available
-  const needsNpmProviders = notInstalled.filter((p) => p.provider.installHint.startsWith("npm install"));
+  const needsNpmProviders = notInstalled.filter((p) => getInstallHint(p.provider).startsWith("npm install"));
   if (needsNpmProviders.length > 0 && !npmExists()) {
     p.log.warn("npm is not detected on your system.");
     p.log.warn("Some providers require npm for installation.");
@@ -278,7 +278,7 @@ async function handleInstallProvider(
       ...notInstalled.map(({ provider }) => ({
         value: provider.name,
         label: `${provider.name} ${pc.dim(`- ${provider.description}`)}`,
-        hint: provider.installHint,
+        hint: getInstallHint(provider),
       })),
     ],
   });
@@ -289,7 +289,7 @@ async function handleInstallProvider(
   if (!provider) return;
 
   p.log.info(`To install ${pc.cyan(provider.name)}, run:`);
-  p.log.message(pc.bold(provider.installHint));
+  p.log.message(pc.bold(getInstallHint(provider)));
 
   const shouldRun = await p.confirm({
     message: "Run installation command now?",
@@ -301,9 +301,11 @@ async function handleInstallProvider(
     return;
   }
 
-  p.log.step(`Running: ${provider.installHint}`);
+  const installHint = getInstallHint(provider);
+  const installCommand = getShellCommand(installHint);
+  p.log.step(`Running: ${installHint}`);
   
-  const proc = Bun.spawn(["sh", "-c", provider.installHint], {
+  const proc = Bun.spawn(installCommand, {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
@@ -340,7 +342,7 @@ async function handleUninstallProvider(
       ...installed.map(({ provider }) => ({
         value: provider.name,
         label: `${provider.name} ${pc.dim(`- ${provider.description}`)}`,
-        hint: provider.uninstallHint,
+        hint: getUninstallHint(provider),
       })),
     ],
   });
@@ -351,7 +353,7 @@ async function handleUninstallProvider(
   if (!provider) return;
 
   p.log.info(`To uninstall ${pc.cyan(provider.name)}, run:`);
-  p.log.message(pc.bold(provider.uninstallHint));
+  p.log.message(pc.bold(getUninstallHint(provider)));
 
   const shouldRun = await p.confirm({
     message: "Run uninstall command now?",
@@ -363,9 +365,11 @@ async function handleUninstallProvider(
     return;
   }
 
-  p.log.step(`Running: ${provider.uninstallHint}`);
+  const uninstallHint = getUninstallHint(provider);
+  const uninstallCommand = getShellCommand(uninstallHint);
+  p.log.step(`Running: ${uninstallHint}`);
 
-  const proc = Bun.spawn(["sh", "-c", provider.uninstallHint], {
+  const proc = Bun.spawn(uninstallCommand, {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

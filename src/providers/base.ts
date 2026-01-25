@@ -16,7 +16,9 @@ export interface Provider {
   description: string;
   command: string;
   installHint: string;
+  installHintWindows?: string;
   uninstallHint: string;
+  uninstallHintWindows?: string;
   isInstalled(): Promise<boolean>;
   commands: ProviderCommands;
   forward(args: string[], pipeData?: string): Promise<void>;
@@ -98,6 +100,27 @@ export async function commandExists(cmd: string): Promise<boolean> {
  */
 export async function npmExists(): Promise<boolean> {
   return await commandExists("npm") || await commandExists("bunx") || await commandExists("npx");
+}
+
+export function getInstallHint(provider: Provider): string {
+  if (process.platform === "win32" && provider.installHintWindows) {
+    return provider.installHintWindows;
+  }
+  return provider.installHint;
+}
+
+export function getUninstallHint(provider: Provider): string {
+  if (process.platform === "win32" && provider.uninstallHintWindows) {
+    return provider.uninstallHintWindows;
+  }
+  return provider.uninstallHint;
+}
+
+export function getShellCommand(command: string): string[] {
+  if (process.platform === "win32") {
+    return ["powershell", "-c", command];
+  }
+  return ["sh", "-c", command];
 }
 
 /**

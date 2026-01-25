@@ -13,6 +13,11 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 
 ### For Humans
 
+**Recommended install (installs Bun if missing)**
+```bash
+curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-bun
+```
+
 **One-line install (macOS/Linux/Windows WSL)**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
@@ -43,7 +48,7 @@ Add to your `AGENTS.md` or system prompt:
 ## LLM CLI Tool
 
 Install:
-- `curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash`
+- `curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-bun`
 
 Use it to:
 - Send prompts: `llm "your question here"`

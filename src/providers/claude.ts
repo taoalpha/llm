@@ -7,7 +7,9 @@ export const claudeProvider: Provider = {
   description: "Claude Code CLI by Anthropic",
   command: CLAUDE_COMMAND,
   installHint: "curl -fsSL https://claude.ai/install.sh | bash",
+  installHintWindows: "powershell -c \"irm https://claude.ai/install.ps1 | iex\"",
   uninstallHint: "rm -f ~/.local/bin/claude && rm -rf ~/.local/share/claude",
+  uninstallHintWindows: "powershell -c \"Remove-Item -Force $env:LOCALAPPDATA\\claude.exe\"",
 
   async isInstalled() {
     return commandExists(this.command);

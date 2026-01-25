@@ -7,7 +7,9 @@ export const opencodeProvider: Provider = {
   description: "OpenCode CLI",
   command: OPENCODE_COMMAND,
   installHint: "curl -fsSL https://opencode.ai/install | bash",
+  installHintWindows: "npm install -g opencode-ai",
   uninstallHint: "opencode uninstall",
+  uninstallHintWindows: "npm uninstall -g opencode-ai",
 
   async isInstalled() {
     return commandExists(this.command);

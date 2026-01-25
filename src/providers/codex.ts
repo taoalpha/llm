@@ -7,7 +7,9 @@ export const codexProvider: Provider = {
   description: "OpenAI Codex CLI",
   command: CODEX_COMMAND,
   installHint: "npm install -g @openai/codex",
+  installHintWindows: "npm install -g @openai/codex",
   uninstallHint: "npm uninstall -g @openai/codex",
+  uninstallHintWindows: "npm uninstall -g @openai/codex",
 
   async isInstalled() {
     return commandExists(this.command);

@@ -7,10 +7,12 @@ export const ollamaProvider: Provider = {
   description: "Ollama (Local LLMs)",
   command: OLLAMA_COMMAND,
   installHint: "curl -fsSL https://ollama.com/install.sh | sh",
+  installHintWindows: "Start-Process https://ollama.com/download/OllamaSetup.exe",
   uninstallHint:
     "sudo systemctl stop ollama && sudo systemctl disable ollama && sudo rm /etc/systemd/system/ollama.service " +
     "&& sudo rm -r $(which ollama | tr 'bin' 'lib') && sudo rm $(which ollama) " +
     "&& sudo userdel ollama && sudo groupdel ollama && sudo rm -r /usr/share/ollama",
+  uninstallHintWindows: "Start-Process ms-settings:appsfeatures",
 
   async isInstalled() {
     return commandExists(this.command);

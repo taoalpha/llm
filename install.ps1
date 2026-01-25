@@ -126,8 +126,8 @@ function Install-Llm {
 
       $cmdDest = Join-Path $installDir "llm.cmd"
       $cmdContent = "@echo off`r`n" +
-        "set ""LLM_SCRIPT=%~dp0llm-bun.js""`r`n" +
-        "bun \"%LLM_SCRIPT%\" %*`r`n"
+        'set "LLM_SCRIPT=%~dp0llm-bun.js"' + "`r`n" +
+        'bun "%LLM_SCRIPT%" %*' + "`r`n"
       Set-Content -Path $cmdDest -Value $cmdContent -Encoding ASCII
 
       Write-Host "Installed to $cmdDest"

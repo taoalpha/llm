@@ -150,7 +150,10 @@ function Install-Llm {
 
   $pathContains = $env:PATH.Split(";") | Where-Object { $_ -eq $installDir }
   if (-not $pathContains) {
-    Write-Warning "Add $installDir to your PATH to run 'llm' from any shell."
+    $newPath = $env:PATH + ";" + $installDir
+    [Environment]::SetEnvironmentVariable("Path", $newPath, "User")
+    Write-Host "Added $installDir to your PATH (User)."
+    Write-Host "Reopen your terminal to use 'llm'."
   }
 }
 

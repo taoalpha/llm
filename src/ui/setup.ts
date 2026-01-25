@@ -67,7 +67,10 @@ async function getLatestVersion(): Promise<string | undefined> {
 
 async function runUpdate(): Promise<boolean> {
   p.log.step("Running installer...");
-  const proc = Bun.spawn(["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"], {
+  const updateCommand = process.platform === "win32"
+    ? ["powershell", "-c", "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"]
+    : ["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"];
+  const proc = Bun.spawn(updateCommand, {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",

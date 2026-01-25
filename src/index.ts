@@ -119,7 +119,10 @@ async function maybeAutoUpdate(): Promise<void> {
 
   setUpdateCheckLastAt(now);
 
-  const proc = Bun.spawn(["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"], {
+  const updateCommand = process.platform === "win32"
+    ? ["powershell", "-c", "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"]
+    : ["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"];
+  const proc = Bun.spawn(updateCommand, {
     stdin: "ignore",
     stdout: "ignore",
     stderr: "ignore",

@@ -16,6 +16,7 @@ export interface Provider {
   description: string;
   command: string;
   installHint: string;
+  uninstallHint: string;
   isInstalled(): Promise<boolean>;
   commands: ProviderCommands;
   forward(args: string[], pipeData?: string): Promise<void>;

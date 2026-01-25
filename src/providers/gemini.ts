@@ -7,6 +7,7 @@ export const geminiProvider: Provider = {
   description: "Gemini CLI by Google",
   command: GEMINI_COMMAND,
   installHint: "npm install -g @google/gemini-cli",
+  uninstallHint: "npm uninstall -g @google/gemini-cli",
 
   async isInstalled() {
     return commandExists(this.command);

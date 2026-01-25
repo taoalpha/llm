@@ -10,14 +10,17 @@ Usage: install [options]
 Options:
     -h, --help              Show this help
     -v, --version <version> Install a specific version (e.g., 0.0.1)
+    --install-bun           Install Bun runtime if missing
 
 Examples:
     curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
     curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --version 0.0.1
+    curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-bun
 EOF
 }
 
 requested_version=${VERSION:-}
+install_bun=0
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -33,6 +36,10 @@ while [[ $# -gt 0 ]]; do
                 echo "Error: --version requires a version argument" >&2
                 exit 1
             fi
+            ;;
+        --install-bun)
+            install_bun=1
+            shift
             ;;
         *)
             echo "Warning: Unknown option '$1'" >&2
@@ -82,6 +89,20 @@ fi
 has_bun=0
 if command -v bun >/dev/null 2>&1; then
     has_bun=1
+fi
+
+if [[ "$install_bun" == "1" && "$has_bun" == "0" ]]; then
+    echo "Bun runtime not found. Installing Bun..."
+    if ! curl -fsSL https://bun.sh/install | bash; then
+        echo "Error: Bun installation failed." >&2
+        exit 1
+    fi
+    if command -v bun >/dev/null 2>&1; then
+        has_bun=1
+    else
+        echo "Error: Bun installation did not add bun to PATH." >&2
+        exit 1
+    fi
 fi
 
 use_bun_build=0

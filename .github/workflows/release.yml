@@ -1,7 +1,14 @@
 name: Release
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (e.g. v0.0.4)"
+        required: true
 
 permissions:
   contents: write
@@ -9,23 +16,18 @@ permissions:
 jobs:
   release:
     runs-on: ubuntu-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Read version from package.json
-        id: version
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-
       - name: Check release does not exist
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v${{ steps.version.outputs.version }}"
           if gh release view "$TAG" >/dev/null 2>&1; then
             echo "Release $TAG already exists" >&2
             exit 1
@@ -56,10 +58,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          TAG="v${{ steps.version.outputs.version }}"
-          LATEST_TAG=$(git tag --list "v*" --sort=-creatordate | head -n 1)
-          if [[ -n "$LATEST_TAG" && "$LATEST_TAG" != "$TAG" ]]; then
-            CHANGELOG=$(git log "$LATEST_TAG"..HEAD --oneline)
+          PREV_TAG=$(git tag --list "v*" --sort=-creatordate | grep -v "^$TAG$" | head -n 1)
+          if [[ -n "$PREV_TAG" ]]; then
+            CHANGELOG=$(git log "$PREV_TAG"..HEAD --oneline)
           else
             CHANGELOG=$(git log --oneline)
           fi

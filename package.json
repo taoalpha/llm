@@ -14,6 +14,7 @@
     "build:macos": "bun build src/index.ts --compile --target=bun-darwin-arm64 --outfile dist/llm-darwin-arm64 && bun build src/index.ts --compile --target=bun-darwin-x64 --outfile dist/llm-darwin-x64",
     "build:linux": "bun build src/index.ts --compile --target=bun-linux-x64 --outfile dist/llm-linux-x64 && bun build src/index.ts --compile --target=bun-linux-arm64 --outfile dist/llm-linux-arm64",
     "build:windows": "bun build src/index.ts --compile --target=bun-windows-x64 --outfile dist/llm-windows-x64.exe",
+    "build:bun": "bun build src/index.ts --target=bun --outfile dist/llm-bun.js",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

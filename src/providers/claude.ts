@@ -7,6 +7,7 @@ export const claudeProvider: Provider = {
   description: "Claude Code CLI by Anthropic",
   command: CLAUDE_COMMAND,
   installHint: "curl -fsSL https://claude.ai/install.sh | bash",
+  uninstallHint: "rm -f ~/.local/bin/claude && rm -rf ~/.local/share/claude",
 
   async isInstalled() {
     return commandExists(this.command);

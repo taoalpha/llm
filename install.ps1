@@ -145,9 +145,11 @@ function Install-Llm {
       Copy-Item -Force $src $jsDest
 
       $cmdDest = Join-Path $installDir "llm.cmd"
-      $cmdContent = "@echo off`r`n" +
-        "set \"LLM_SCRIPT=%~dp0llm-node.js\"`r`n" +
-        ("node \"%LLM_SCRIPT%\" %*" + "`r`n")
+      $cmdContent = @'
+@echo off
+set "LLM_SCRIPT=%~dp0llm-node.js"
+node "%LLM_SCRIPT%" %*
+'@
       Set-Content -Path $cmdDest -Value $cmdContent -Encoding ASCII
 
       Write-Host "Installed to $cmdDest"

@@ -13,10 +13,12 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 
 ### For Humans
 
-**Recommended install (installs Node.js if missing)**
+**Recommended install (Node.js runtime)**
 ```bash
 curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
 ```
+
+The installer requires Node.js and installs it if missing.
 
 **One-line install (macOS/Linux/Windows WSL)**
 ```bash
@@ -28,7 +30,7 @@ curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
 curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --version 0.0.1
 ```
 
-**Windows (PowerShell) - recommended (installs Node.js if missing)**
+**Windows (PowerShell) - recommended (Node.js runtime)**
 ```powershell
 powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"
 ```

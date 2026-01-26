@@ -125,6 +125,7 @@ function Install-Llm {
     return
   }
 
+  $runtime = "node"
   $filename = "llm-node.zip"
 
   $baseUrl = "https://github.com/taoalpha/llm/releases/latest/download"

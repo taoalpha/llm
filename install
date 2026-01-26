@@ -130,15 +130,14 @@ if [[ "$has_node" == "0" && "$install_runtime" == "1" ]]; then
     fi
 fi
 
-runtime=""
-if [[ "$has_node" == "1" ]]; then
-    runtime="node"
+if [[ "$has_node" == "0" ]]; then
+    echo "Error: Node.js runtime is required to install llm." >&2
+    exit 1
 fi
 
-filename="llm-${combo}.zip"
-if [[ "$runtime" == "node" ]]; then
-    filename="llm-node.zip"
-fi
+runtime="node"
+
+filename="llm-node.zip"
 
 if [[ -z "$requested_version" ]]; then
     base_url="https://github.com/taoalpha/llm/releases/latest/download"
@@ -154,25 +153,21 @@ mkdir -p "$install_dir"
 tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 
-if [[ "$runtime" == "node" ]]; then
-    if ! curl -fsSL "$url" -o "$tmp_dir/$filename"; then
-        echo "Warning: Runtime bundle not found, falling back to standalone binary." >&2
-        runtime=""
-        filename="llm-${combo}.zip"
-        url="${base_url}/${filename}"
-        curl -fsSL "$url" -o "$tmp_dir/$filename"
-    fi
-else
+if ! curl -fsSL "$url" -o "$tmp_dir/$filename"; then
+    echo "Warning: Node runtime bundle not found, falling back to standalone binary." >&2
+    filename="llm-${combo}.zip"
+    url="${base_url}/${filename}"
     curl -fsSL "$url" -o "$tmp_dir/$filename"
+    runtime=""
 fi
 unzip -q "$tmp_dir/$filename" -d "$tmp_dir"
 
-src="$tmp_dir/llm-${combo}"
-if [[ "$runtime" == "node" ]]; then
-    src="$tmp_dir/llm-node.js"
-fi
-if [[ "$os" == "windows" && -z "$runtime" ]]; then
-    src="$tmp_dir/llm-windows-x64.exe"
+src="$tmp_dir/llm-node.js"
+if [[ -z "$runtime" ]]; then
+    src="$tmp_dir/llm-${combo}"
+    if [[ "$os" == "windows" ]]; then
+        src="$tmp_dir/llm-windows-x64.exe"
+    fi
 fi
 
 if [[ ! -f "$src" ]]; then
@@ -182,15 +177,16 @@ fi
 
 dest="$install_dir/llm"
 if [[ "$os" == "windows" ]]; then
-    dest="$install_dir/llm.exe"
+    dest="$install_dir/llm"
+    if [[ -z "$runtime" ]]; then
+        dest="$install_dir/llm.exe"
+    fi
 fi
 
 mv "$src" "$dest"
-if [[ "$runtime" == "node" || "$runtime" == "bun" ]]; then
+if [[ "$runtime" == "node" ]]; then
     tmp_file="${dest}.tmp"
-    if [[ "$runtime" == "node" ]]; then
-        printf '#!/usr/bin/env node\n' > "$tmp_file"
-    fi
+    printf '#!/usr/bin/env node\n' > "$tmp_file"
     cat "$dest" >> "$tmp_file"
     mv "$tmp_file" "$dest"
 fi

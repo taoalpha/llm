@@ -120,15 +120,12 @@ function Install-Llm {
     }
   }
 
-  $runtime = ""
-  if ($hasNode) {
-    $runtime = "node"
+  if (-not $hasNode) {
+    Write-Error "Error: Node.js runtime is required to install llm."
+    return
   }
 
-  $filename = "llm-windows-x64.zip"
-  if ($runtime -eq "node") {
-    $filename = "llm-node.zip"
-  }
+  $filename = "llm-node.zip"
 
   $baseUrl = "https://github.com/taoalpha/llm/releases/latest/download"
   if ($requestedVersion) {
@@ -148,25 +145,18 @@ function Install-Llm {
     try {
       Invoke-WebRequest -Uri $url -OutFile $zipPath
     } catch {
-    if ($runtime -eq "node") {
-      Write-Warning "Runtime bundle not found, falling back to standalone binary."
+      Write-Warning "Node runtime bundle not found, falling back to standalone binary."
+      $filename = "llm-windows-x64.zip"
+      $url = "$baseUrl/$filename"
+      $zipPath = Join-Path $tmpDir $filename
+      Invoke-WebRequest -Uri $url -OutFile $zipPath
       $runtime = ""
-        $filename = "llm-windows-x64.zip"
-        $url = "$baseUrl/$filename"
-        $zipPath = Join-Path $tmpDir $filename
-        Invoke-WebRequest -Uri $url -OutFile $zipPath
-      } else {
-        throw
-      }
     }
 
     Expand-Archive -Path $zipPath -DestinationPath $tmpDir -Force
 
     if ($runtime -eq "node") {
       $src = Join-Path $tmpDir "llm-node.js"
-    }
-
-    if ($runtime -eq "node") {
       if (-not (Test-Path $src)) {
         Write-Error "Downloaded archive does not contain expected file: $src"
         return

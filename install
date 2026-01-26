@@ -10,7 +10,7 @@ Usage: install [options]
 Options:
     -h, --help              Show this help
     -v, --version <version> Install a specific version (e.g., 0.0.1)
-    --install-runtime       Install Bun runtime if missing
+    --install-runtime       Install Node.js runtime if missing (default)
 
 Examples:
     curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
@@ -20,7 +20,7 @@ EOF
 }
 
 requested_version=${VERSION:-}
-install_runtime=0
+install_runtime=1
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -86,33 +86,58 @@ if ! command -v unzip >/dev/null 2>&1; then
     exit 1
 fi
 
-has_bun=0
-if command -v bun >/dev/null 2>&1; then
-    has_bun=1
+has_node=0
+if command -v node >/dev/null 2>&1; then
+    has_node=1
 fi
 
-if [[ "$install_runtime" == "1" && "$has_bun" == "0" ]]; then
-    echo "Bun runtime not found. Installing Bun..."
-    if ! curl -fsSL https://bun.sh/install | bash; then
-        echo "Error: Bun installation failed." >&2
-        exit 1
+install_node() {
+    echo "Installing Node.js via fnm..."
+    if ! command -v fnm >/dev/null 2>&1; then
+        if ! curl -fsSL https://fnm.vercel.app/install | bash; then
+            echo "Error: fnm installation failed." >&2
+            return 1
+        fi
     fi
-    if command -v bun >/dev/null 2>&1; then
-        has_bun=1
+
+    export FNM_DIR="$HOME/.fnm"
+    if [[ -d "$FNM_DIR" ]]; then
+        export PATH="$FNM_DIR:$PATH"
+    fi
+    if command -v fnm >/dev/null 2>&1; then
+        eval "$(fnm env 2>/dev/null)"
+    fi
+
+    if ! command -v fnm >/dev/null 2>&1; then
+        echo "Error: fnm is not available in PATH." >&2
+        return 1
+    fi
+
+    if ! fnm install --lts; then
+        echo "Error: Node.js installation failed." >&2
+        return 1
+    fi
+    fnm use --lts >/dev/null 2>&1 || true
+    return 0
+}
+
+if [[ "$has_node" == "0" && "$install_runtime" == "1" ]]; then
+    if install_node; then
+        has_node=1
     else
-        echo "Error: Bun installation did not add bun to PATH." >&2
+        echo "Error: Failed to install Node.js runtime." >&2
         exit 1
     fi
 fi
 
-use_bun_build=0
-if [[ "$has_bun" == "1" ]]; then
-    use_bun_build=1
+runtime=""
+if [[ "$has_node" == "1" ]]; then
+    runtime="node"
 fi
 
 filename="llm-${combo}.zip"
-if [[ "$use_bun_build" == "1" ]]; then
-    filename="llm-bun.zip"
+if [[ "$runtime" == "node" ]]; then
+    filename="llm-node.zip"
 fi
 
 if [[ -z "$requested_version" ]]; then
@@ -129,10 +154,10 @@ mkdir -p "$install_dir"
 tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 
-if [[ "$use_bun_build" == "1" ]]; then
+if [[ "$runtime" == "node" ]]; then
     if ! curl -fsSL "$url" -o "$tmp_dir/$filename"; then
-        echo "Warning: Bun-optimized build not found, falling back to standalone binary." >&2
-        use_bun_build=0
+        echo "Warning: Runtime bundle not found, falling back to standalone binary." >&2
+        runtime=""
         filename="llm-${combo}.zip"
         url="${base_url}/${filename}"
         curl -fsSL "$url" -o "$tmp_dir/$filename"
@@ -143,10 +168,10 @@ fi
 unzip -q "$tmp_dir/$filename" -d "$tmp_dir"
 
 src="$tmp_dir/llm-${combo}"
-if [[ "$use_bun_build" == "1" ]]; then
-    src="$tmp_dir/llm-bun.js"
+if [[ "$runtime" == "node" ]]; then
+    src="$tmp_dir/llm-node.js"
 fi
-if [[ "$os" == "windows" && "$use_bun_build" == "0" ]]; then
+if [[ "$os" == "windows" && -z "$runtime" ]]; then
     src="$tmp_dir/llm-windows-x64.exe"
 fi
 
@@ -161,9 +186,11 @@ if [[ "$os" == "windows" ]]; then
 fi
 
 mv "$src" "$dest"
-if [[ "$use_bun_build" == "1" ]]; then
+if [[ "$runtime" == "node" || "$runtime" == "bun" ]]; then
     tmp_file="${dest}.tmp"
-    printf '#!/usr/bin/env bun\n' > "$tmp_file"
+    if [[ "$runtime" == "node" ]]; then
+        printf '#!/usr/bin/env node\n' > "$tmp_file"
+    fi
     cat "$dest" >> "$tmp_file"
     mv "$tmp_file" "$dest"
 fi

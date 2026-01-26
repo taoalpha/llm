@@ -9,7 +9,7 @@ Usage: Install-Llm [options]
 Options:
   -h, --help              Show this help
   -v, --version <version> Install a specific version (e.g., 0.0.1)
-  --install-runtime       Install Bun runtime if missing
+  --install-runtime       Install Node.js runtime if missing (default)
 
 Examples:
   powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --install-runtime"
@@ -23,7 +23,7 @@ function Install-Llm {
   )
 
   $requestedVersion = $env:VERSION
-  $installRuntime = $false
+  $installRuntime = $true
 
   for ($i = 0; $i -lt $ArgsList.Length; $i++) {
     $arg = $ArgsList[$i]
@@ -55,31 +55,48 @@ function Install-Llm {
     }
   }
 
-  $hasBun = $false
-  if (Get-Command bun -ErrorAction SilentlyContinue) {
-    $hasBun = $true
+  $hasNode = $false
+  if (Get-Command node -ErrorAction SilentlyContinue) {
+    $hasNode = $true
   }
 
-  if ($installRuntime -and -not $hasBun) {
-    Write-Host "Bun runtime not found. Installing Bun..."
+  function Install-Node {
+    Write-Host "Installing Node.js via fnm..."
     try {
-      irm https://bun.sh/install.ps1 | iex
+      irm https://fnm.vercel.app/install.ps1 | iex
     } catch {
-      Write-Error "Error: Bun installation failed."
-      return
+      Write-Error "Error: fnm installation failed."
+      return $false
     }
-    if (Get-Command bun -ErrorAction SilentlyContinue) {
-      $hasBun = $true
+
+    try {
+      fnm env --shell powershell | Out-String | Invoke-Expression
+      fnm install --lts | Out-Null
+      fnm use --lts | Out-Null
+      return $true
+    } catch {
+      Write-Error "Error: Node.js installation failed."
+      return $false
+    }
+  }
+
+  if (-not $hasNode -and $installRuntime) {
+    if (Install-Node) {
+      $hasNode = $true
     } else {
-      Write-Error "Error: Bun installation did not add bun to PATH."
+      Write-Error "Error: Failed to install Node.js runtime."
       return
     }
   }
 
-  $useBunBuild = $hasBun
+  $runtime = ""
+  if ($hasNode) {
+    $runtime = "node"
+  }
+
   $filename = "llm-windows-x64.zip"
-  if ($useBunBuild) {
-    $filename = "llm-bun.zip"
+  if ($runtime -eq "node") {
+    $filename = "llm-node.zip"
   }
 
   $baseUrl = "https://github.com/taoalpha/llm/releases/latest/download"
@@ -100,9 +117,9 @@ function Install-Llm {
     try {
       Invoke-WebRequest -Uri $url -OutFile $zipPath
     } catch {
-      if ($useBunBuild) {
-        Write-Warning "Bun-optimized build not found, falling back to standalone binary."
-        $useBunBuild = $false
+    if ($runtime -eq "node") {
+      Write-Warning "Runtime bundle not found, falling back to standalone binary."
+      $runtime = ""
         $filename = "llm-windows-x64.zip"
         $url = "$baseUrl/$filename"
         $zipPath = Join-Path $tmpDir $filename
@@ -114,20 +131,23 @@ function Install-Llm {
 
     Expand-Archive -Path $zipPath -DestinationPath $tmpDir -Force
 
-    if ($useBunBuild) {
-      $src = Join-Path $tmpDir "llm-bun.js"
+    if ($runtime -eq "node") {
+      $src = Join-Path $tmpDir "llm-node.js"
+    }
+
+    if ($runtime -eq "node") {
       if (-not (Test-Path $src)) {
         Write-Error "Downloaded archive does not contain expected file: $src"
         return
       }
 
-      $jsDest = Join-Path $installDir "llm-bun.js"
+      $jsDest = Join-Path $installDir "llm-node.js"
       Copy-Item -Force $src $jsDest
 
       $cmdDest = Join-Path $installDir "llm.cmd"
       $cmdContent = "@echo off`r`n" +
-        'set "LLM_SCRIPT=%~dp0llm-bun.js"' + "`r`n" +
-        'bun "%LLM_SCRIPT%" %*' + "`r`n"
+        "set \"LLM_SCRIPT=%~dp0llm-node.js\"`r`n" +
+        ("node \"%LLM_SCRIPT%\" %*" + "`r`n")
       Set-Content -Path $cmdDest -Value $cmdContent -Encoding ASCII
 
       Write-Host "Installed to $cmdDest"

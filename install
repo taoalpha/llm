@@ -154,21 +154,12 @@ tmp_dir=$(mktemp -d)
 trap 'rm -rf "$tmp_dir"' EXIT
 
 if ! curl -fsSL "$url" -o "$tmp_dir/$filename"; then
-    echo "Warning: Node runtime bundle not found, falling back to standalone binary." >&2
-    filename="llm-${combo}.zip"
-    url="${base_url}/${filename}"
-    curl -fsSL "$url" -o "$tmp_dir/$filename"
-    runtime=""
+    echo "Error: Node runtime bundle not found in release assets." >&2
+    exit 1
 fi
 unzip -q "$tmp_dir/$filename" -d "$tmp_dir"
 
 src="$tmp_dir/llm-node.js"
-if [[ -z "$runtime" ]]; then
-    src="$tmp_dir/llm-${combo}"
-    if [[ "$os" == "windows" ]]; then
-        src="$tmp_dir/llm-windows-x64.exe"
-    fi
-fi
 
 if [[ ! -f "$src" ]]; then
     echo "Downloaded archive does not contain expected binary: $src" >&2
@@ -178,23 +169,16 @@ fi
 dest="$install_dir/llm"
 if [[ "$os" == "windows" ]]; then
     dest="$install_dir/llm"
-    if [[ -z "$runtime" ]]; then
-        dest="$install_dir/llm.exe"
-    fi
 fi
 
-if [[ "$runtime" == "node" ]]; then
-    tmp_file="${dest}.tmp"
-    printf '#!/usr/bin/env node\n' > "$tmp_file"
-    if head -n 1 "$src" | grep -q '^#!'; then
-        tail -n +2 "$src" >> "$tmp_file"
-    else
-        cat "$src" >> "$tmp_file"
-    fi
-    mv "$tmp_file" "$dest"
+tmp_file="${dest}.tmp"
+printf '#!/usr/bin/env node\n' > "$tmp_file"
+if head -n 1 "$src" | grep -q '^#!'; then
+    tail -n +2 "$src" >> "$tmp_file"
 else
-    mv "$src" "$dest"
+    cat "$src" >> "$tmp_file"
 fi
+mv "$tmp_file" "$dest"
 chmod 755 "$dest"
 
 echo "Installed to $dest"

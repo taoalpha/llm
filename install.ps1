@@ -146,46 +146,30 @@ function Install-Llm {
     try {
       Invoke-WebRequest -Uri $url -OutFile $zipPath
     } catch {
-      Write-Warning "Node runtime bundle not found, falling back to standalone binary."
-      $filename = "llm-windows-x64.zip"
-      $url = "$baseUrl/$filename"
-      $zipPath = Join-Path $tmpDir $filename
-      Invoke-WebRequest -Uri $url -OutFile $zipPath
-      $runtime = ""
+      Write-Error "Error: Node runtime bundle not found in release assets."
+      return
     }
 
     Expand-Archive -Path $zipPath -DestinationPath $tmpDir -Force
 
-    if ($runtime -eq "node") {
-      $src = Join-Path $tmpDir "llm-node.js"
-      if (-not (Test-Path $src)) {
-        Write-Error "Downloaded archive does not contain expected file: $src"
-        return
-      }
+    $src = Join-Path $tmpDir "llm-node.js"
+    if (-not (Test-Path $src)) {
+      Write-Error "Downloaded archive does not contain expected file: $src"
+      return
+    }
 
-      $jsDest = Join-Path $installDir "llm-node.js"
-      Copy-Item -Force $src $jsDest
+    $jsDest = Join-Path $installDir "llm-node.js"
+    Copy-Item -Force $src $jsDest
 
-      $cmdDest = Join-Path $installDir "llm.cmd"
-      $cmdContent = @'
+    $cmdDest = Join-Path $installDir "llm.cmd"
+    $cmdContent = @'
 @echo off
 set "LLM_SCRIPT=%~dp0llm-node.js"
 node "%LLM_SCRIPT%" %*
 '@
-      Set-Content -Path $cmdDest -Value $cmdContent -Encoding ASCII
+    Set-Content -Path $cmdDest -Value $cmdContent -Encoding ASCII
 
-      Write-Host "Installed to $cmdDest"
-    } else {
-      $src = Join-Path $tmpDir "llm-windows-x64.exe"
-      if (-not (Test-Path $src)) {
-        Write-Error "Downloaded archive does not contain expected binary: $src"
-        return
-      }
-
-      $dest = Join-Path $installDir "llm.exe"
-      Copy-Item -Force $src $dest
-      Write-Host "Installed to $dest"
-    }
+    Write-Host "Installed to $cmdDest"
   } finally {
     if (Test-Path $tmpDir) {
       Remove-Item -Recurse -Force $tmpDir

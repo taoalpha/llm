@@ -183,12 +183,17 @@ if [[ "$os" == "windows" ]]; then
     fi
 fi
 
-mv "$src" "$dest"
 if [[ "$runtime" == "node" ]]; then
     tmp_file="${dest}.tmp"
     printf '#!/usr/bin/env node\n' > "$tmp_file"
-    cat "$dest" >> "$tmp_file"
+    if head -n 1 "$src" | grep -q '^#!'; then
+        tail -n +2 "$src" >> "$tmp_file"
+    else
+        cat "$src" >> "$tmp_file"
+    fi
     mv "$tmp_file" "$dest"
+else
+    mv "$src" "$dest"
 fi
 chmod 755 "$dest"
 

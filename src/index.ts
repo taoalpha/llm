@@ -6,6 +6,7 @@ import { getDefaultProvider, getUpdateCheckIntervalMs, getUpdateCheckLastAt, set
 import { getProvider, detectProvider } from "./providers";
 import { isLLMCommand, splitArgs, npmExists, getInstallHint } from "./providers/base";
 import { runSelfUI } from "./ui/setup";
+import { spawnCommand } from "./process";
 
 const VERSION = pkg.version;
 
@@ -65,6 +66,9 @@ async function promptInstallNpm(): Promise<boolean> {
 }
 
 async function installNpm(): Promise<void> {
+  if (process.platform === "win32") {
+    return;
+  }
   const npmInstallCommands = [
     "curl -fsSL https://raw.githubusercontent.com/npm/cli/v10.9.2/scripts/install.sh | sh",
     "curl -o- https://npmjs.org/install.sh | sh",
@@ -73,13 +77,12 @@ async function installNpm(): Promise<void> {
   
   for (const cmd of npmInstallCommands) {
     try {
-      const proc = Bun.spawn(["sh", "-c", cmd], {
+      const exitCode = await spawnCommand(["sh", "-c", cmd], {
         stdout: "inherit",
         stderr: "inherit",
+        setExitCode: false,
       });
-      await proc.exited;
-      
-      if (proc.exitCode === 0) {
+      if (exitCode === 0) {
         return;
       }
     } catch {
@@ -122,13 +125,12 @@ async function maybeAutoUpdate(): Promise<void> {
   const updateCommand = process.platform === "win32"
     ? ["powershell", "-c", "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"]
     : ["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"];
-  const proc = Bun.spawn(updateCommand, {
+  await spawnCommand(updateCommand, {
     stdin: "ignore",
     stdout: "ignore",
     stderr: "ignore",
+    setExitCode: false,
   });
-
-  await proc.exited;
 }
 
 async function main() {

@@ -4,6 +4,7 @@ import pkg from "../../package.json";
 import { getDefaultProvider, setDefaultProvider, clearDefaultProvider, getConfigPath } from "../config";
 import { getProvidersWithStatus, detectProvider } from "../providers";
 import { npmExists, getInstallHint, getUninstallHint, getShellCommand } from "../providers/base";
+import { spawnCommand } from "../process";
 import type { Provider } from "../providers/base";
 
 // Ask about oh-my-opencode installation after OpenCode setup
@@ -26,19 +27,18 @@ async function askAboutOhMyOpenCode(): Promise<void> {
   p.log.step("Installing oh-my-opencode...");
   const installCommand = "npm install -g oh-my-opencode";
   
-  const proc = Bun.spawn(["sh", "-c", installCommand], {
+  const exitCode = await spawnCommand(["sh", "-c", installCommand], {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
+    setExitCode: false,
   });
 
-  await proc.exited;
-
-  if (proc.exitCode === 0) {
+  if (exitCode === 0) {
     p.log.success("oh-my-opencode installed successfully!");
     p.log.info("Run 'oh-my-opencode' to start the enhanced agent orchestrator.");
   } else {
-    p.log.error(`oh-my-opencode installation failed with exit code ${proc.exitCode}`);
+    p.log.error(`oh-my-opencode installation failed with exit code ${exitCode}`);
   }
 }
 
@@ -70,13 +70,13 @@ async function runUpdate(): Promise<boolean> {
   const updateCommand = process.platform === "win32"
     ? ["powershell", "-c", "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"]
     : ["sh", "-c", "curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash"];
-  const proc = Bun.spawn(updateCommand, {
+  const exitCode = await spawnCommand(updateCommand, {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
+    setExitCode: false,
   });
-  await proc.exited;
-  return proc.exitCode === 0;
+  return exitCode === 0;
 }
 
 export async function runSelfUI(): Promise<void> {
@@ -250,16 +250,20 @@ async function handleInstallProvider(
       "curl -o- https://npmjs.org/install.sh | sh",
       "wget -qO- https://npmjs.org/install.sh && sh install.sh"
     ];
+
+    if (process.platform === "win32") {
+      p.log.error("npm installation is not supported automatically on Windows.");
+      return;
+    }
     
     for (const cmd of npmInstallCommands) {
       try {
-        const proc = Bun.spawn(["sh", "-c", cmd], {
+        const exitCode = await spawnCommand(["sh", "-c", cmd], {
           stdout: "inherit",
           stderr: "inherit",
+          setExitCode: false,
         });
-        await proc.exited;
-        
-        if (proc.exitCode === 0) {
+        if (exitCode === 0) {
           p.log.success("npm installed successfully!");
           return;
         }
@@ -308,15 +312,13 @@ async function handleInstallProvider(
   const installCommand = getShellCommand(installHint);
   p.log.step(`Running: ${installHint}`);
   
-  const proc = Bun.spawn(installCommand, {
+  const exitCode = await spawnCommand(installCommand, {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
+    setExitCode: false,
   });
-  
-  await proc.exited;
-  
-  if (proc.exitCode === 0) {
+  if (exitCode === 0) {
     p.log.success(`${provider.name} installed successfully!`);
     
     // Ask about oh-my-opencode if OpenCode was just installed
@@ -324,7 +326,7 @@ async function handleInstallProvider(
       await askAboutOhMyOpenCode();
     }
   } else {
-    p.log.error(`Installation failed with exit code ${proc.exitCode}`);
+    p.log.error(`Installation failed with exit code ${exitCode}`);
   }
 }
 
@@ -372,17 +374,16 @@ async function handleUninstallProvider(
   const uninstallCommand = getShellCommand(uninstallHint);
   p.log.step(`Running: ${uninstallHint}`);
 
-  const proc = Bun.spawn(uninstallCommand, {
+  const exitCode = await spawnCommand(uninstallCommand, {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
+    setExitCode: false,
   });
 
-  await proc.exited;
-
-  if (proc.exitCode === 0) {
+  if (exitCode === 0) {
     p.log.success(`${provider.name} uninstalled successfully!`);
   } else {
-    p.log.error(`Uninstall failed with exit code ${proc.exitCode}`);
+    p.log.error(`Uninstall failed with exit code ${exitCode}`);
   }
 }

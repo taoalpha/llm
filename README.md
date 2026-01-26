@@ -7,7 +7,7 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 - **Zero Configuration**: Auto-detects installed LLM CLIs (OpenCode, Claude, Gemini, Codex, Ollama)
 - **Transparent Proxy**: All flags and subcommands pass through to the underlying provider
 - **Pipe Support**: Process output from other CLI tools
-- **Cross-Platform**: Pre-built binaries for macOS, Linux, and Windows
+- **Cross-Platform**: JS runtime bundle (Node.js, Bun-compatible)
 
 ## Installation
 
@@ -18,7 +18,7 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 curl -fsSL "https://raw.githubusercontent.com/taoalpha/llm/master/install?ts=$(date +%s)" | bash
 ```
 
-The installer requires Node.js and installs it if missing.
+The installer requires Node.js and installs it if missing. The bundled JS also runs on Bun.
 
 **One-line install (macOS/Linux/Windows WSL)**
 ```bash
@@ -142,24 +142,21 @@ All other flags are passed through to the underlying provider.
 
 ```bash
 # Install dependencies
-bun install
+npm install
 
 # Run in development
-bun run dev
+npm run dev
 
 # Type check
-bun run typecheck
+npm run typecheck
 
-# Build binary
-bun run build
-
-# Build for all platforms
-bun run build:all
+# Build Node bundle
+npm run build:node
 ```
 
 ## Installer
 
-The `install` script downloads the right zipped binary for the current OS/arch and installs it to `~/.local/bin/llm`.
+The `install` script downloads the runtime bundle and installs it to `~/.local/bin/llm`.
 
 ## License
 

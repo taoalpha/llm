@@ -1,4 +1,4 @@
-#!/usr/bin/env bun
+#!/usr/bin/env node
 
 import pc from "picocolors";
 import pkg from "../package.json";
@@ -134,7 +134,7 @@ async function maybeAutoUpdate(): Promise<void> {
 }
 
 async function main() {
-  // Skip "bun" and script path
+  // Skip runtime and script path
   const rawArgs = process.argv.slice(2);
   const { provider: providerFlag, self, passthrough } = parseArgs(rawArgs);
 

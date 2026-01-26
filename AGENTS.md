@@ -4,41 +4,41 @@ Guidelines for AI agents working on this repository.
 
 ## Project Overview
 
-This repo ships `llm`, a provider-agnostic CLI wrapper built with Bun + TypeScript. It auto-detects installed LLM CLIs (OpenCode, Claude, Gemini, Codex, Ollama) and proxies commands or prompts to the active provider.
+This repo ships `llm`, a provider-agnostic CLI wrapper built with Node.js + TypeScript (Bun-compatible runtime). It auto-detects installed LLM CLIs (OpenCode, Claude, Gemini, Codex, Ollama) and proxies commands or prompts to the active provider.
 
-**Tech Stack**: Bun, TypeScript, @clack/prompts, conf, picocolors.
+**Tech Stack**: Node.js, TypeScript, @clack/prompts, conf, picocolors.
 
 ## Build / Lint / Test Commands
 
 ### Build
 ```bash
 # Local build (current OS)
-bun run build
+npm run build:node
 
 # All platforms
-bun run build:all
+npm run build:node
 ```
 
 ### Typecheck (primary “lint”)
 ```bash
-bun run typecheck
+npm run typecheck
 ```
 
 ### Tests
 There is no automated test suite. Use manual CLI checks:
 ```bash
 # Basic prompt
-bun run dev "hello"
+npm run dev "hello"
 
 # Pipe input
-printf "hello" | bun run dev "count words"
+printf "hello" | npm run dev "count words"
 
 # Proxy subcommand
-bun run dev --version
-bun run dev session list
+npm run dev --version
+npm run dev session list
 
 # Config UI
-bun run dev --self
+npm run dev --self
 ```
 
 ### Single-test equivalent
@@ -103,7 +103,7 @@ curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
 - Avoid hidden side-effects in error flows.
 
 ### Process Execution
-- Use `Bun.spawn` with `stdin/stdout/stderr: "inherit"` for proxy behavior.
+- Use `spawnCommand` with `stdin/stdout/stderr: "inherit"` for proxy behavior.
 - Do not capture output unless required for logic.
 
 ## Configuration
@@ -121,7 +121,7 @@ Do not store secrets in config unless explicitly requested.
 
 ## Workflow / CI
 
-No CI is enforced besides the manual release workflow. Run `bun run typecheck` before shipping.
+No CI is enforced besides the manual release workflow. Run `npm run typecheck` before shipping.
 
 ## Cursor / Copilot Rules
 

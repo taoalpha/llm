@@ -7,6 +7,14 @@ import { npmExists, getInstallHint, getUninstallHint, getShellCommand } from "..
 import { spawnCommand } from "../process";
 import type { Provider } from "../providers/base";
 
+async function ensureWindowsNpmPolicy(): Promise<void> {
+  if (process.platform !== "win32") return;
+  await spawnCommand(
+    ["powershell", "-c", "Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned -Force"],
+    { stdout: "ignore", stderr: "ignore", setExitCode: false }
+  );
+}
+
 // Ask about oh-my-opencode installation after OpenCode setup
 async function askAboutOhMyOpenCode(): Promise<void> {
   const shouldInstall = await p.confirm({
@@ -24,10 +32,13 @@ async function askAboutOhMyOpenCode(): Promise<void> {
     return;
   }
 
+  await ensureWindowsNpmPolicy();
   p.log.step("Installing oh-my-opencode...");
-  const installCommand = "npm install -g oh-my-opencode";
-  
-  const exitCode = await spawnCommand(["sh", "-c", installCommand], {
+  const installCommand = process.platform === "win32"
+    ? ["powershell", "-c", "& \"C:\\Program Files\\nodejs\\npm.cmd\" install -g oh-my-opencode"]
+    : ["sh", "-c", "npm install -g oh-my-opencode"];
+
+  const exitCode = await spawnCommand(installCommand, {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
@@ -310,6 +321,9 @@ async function handleInstallProvider(
 
   const installHint = getInstallHint(provider);
   const installCommand = getShellCommand(installHint);
+  if (installHint.startsWith("npm install")) {
+    await ensureWindowsNpmPolicy();
+  }
   p.log.step(`Running: ${installHint}`);
   
   const exitCode = await spawnCommand(installCommand, {

@@ -1,4 +1,4 @@
-import { $ } from "bun";
+import { spawnCommand } from "../process";
 
 export interface CommandArgs {
   rest: string;
@@ -87,12 +87,14 @@ export function isLLMCommand(arg: string): arg is LLMCommand {
  * Check if a command exists in PATH
  */
 export async function commandExists(cmd: string): Promise<boolean> {
-  try {
-    await $`which ${cmd}`.quiet();
-    return true;
-  } catch {
-    return false;
-  }
+  const argv = process.platform === "win32" ? ["where", cmd] : ["which", cmd];
+  const exitCode = await spawnCommand(argv, {
+    stdin: "ignore",
+    stdout: "ignore",
+    stderr: "ignore",
+    setExitCode: false,
+  });
+  return exitCode === 0;
 }
 
 /**
@@ -127,13 +129,11 @@ export function getShellCommand(command: string): string[] {
  * Spawn a process with full TTY inheritance (for interactive commands)
  */
 export async function spawnInherit(cmd: string, args: string[]): Promise<void> {
-  const proc = Bun.spawn([cmd, ...args], {
+  await spawnCommand([cmd, ...args], {
     stdin: "inherit",
     stdout: "inherit",
     stderr: "inherit",
   });
-  await proc.exited;
-  process.exitCode = proc.exitCode ?? 0;
 }
 
 /**
@@ -144,11 +144,10 @@ export async function spawnWithInput(
   args: string[],
   input: string
 ): Promise<void> {
-  const proc = Bun.spawn([cmd, ...args], {
-    stdin: new TextEncoder().encode(input),
+  const stdin = new TextEncoder().encode(input);
+  await spawnCommand([cmd, ...args], {
+    stdin,
     stdout: "inherit",
     stderr: "inherit",
   });
-  await proc.exited;
-  process.exitCode = proc.exitCode ?? 0;
 }

@@ -85,8 +85,11 @@ function Install-Llm {
   }
 
   function Install-NodeWithWinget {
+    $downloadUrl = "https://nodejs.org/en/download"
     if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
-      Write-Error "Error: winget is not available. Install Node.js from https://nodejs.org and re-run this installer."
+      Write-Warning "winget is not available. Opening Node.js download page."
+      Start-Process $downloadUrl | Out-Null
+      Write-Error "Please install Node.js LTS manually, reopen PowerShell, then re-run this installer."
       return $false
     }
 
@@ -96,10 +99,14 @@ function Install-Llm {
       if (Get-Command node -ErrorAction SilentlyContinue) {
         return $true
       }
-      Write-Error "Error: Node.js installation via winget failed."
+      Write-Warning "Node.js installation via winget failed. Opening download page."
+      Start-Process $downloadUrl | Out-Null
+      Write-Error "Please install Node.js LTS manually, reopen PowerShell, then re-run this installer."
       return $false
     } catch {
-      Write-Error "Error: Node.js installation via winget failed."
+      Write-Warning "Node.js installation via winget failed. Opening download page."
+      Start-Process $downloadUrl | Out-Null
+      Write-Error "Please install Node.js LTS manually, reopen PowerShell, then re-run this installer."
       return $false
     }
   }

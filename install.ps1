@@ -65,17 +65,41 @@ function Install-Llm {
     try {
       irm https://fnm.vercel.app/install.ps1 | iex
     } catch {
-      Write-Error "Error: fnm installation failed."
-      return $false
+      Write-Warning "fnm installation failed."
+      return Install-NodeWithWinget
     }
 
     try {
       fnm env --shell powershell | Out-String | Invoke-Expression
       fnm install --lts | Out-Null
       fnm use --lts | Out-Null
-      return $true
+      if (Get-Command node -ErrorAction SilentlyContinue) {
+        return $true
+      }
+      Write-Warning "fnm installed, but node was not found in PATH."
+      return Install-NodeWithWinget
     } catch {
-      Write-Error "Error: Node.js installation failed."
+      Write-Warning "Node.js installation via fnm failed."
+      return Install-NodeWithWinget
+    }
+  }
+
+  function Install-NodeWithWinget {
+    if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
+      Write-Error "Error: winget is not available. Install Node.js from https://nodejs.org and re-run this installer."
+      return $false
+    }
+
+    Write-Host "Installing Node.js via winget..."
+    try {
+      & winget install OpenJS.NodeJS.LTS --silent --accept-package-agreements --accept-source-agreements | Out-Null
+      if (Get-Command node -ErrorAction SilentlyContinue) {
+        return $true
+      }
+      Write-Error "Error: Node.js installation via winget failed."
+      return $false
+    } catch {
+      Write-Error "Error: Node.js installation via winget failed."
       return $false
     }
   }

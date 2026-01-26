@@ -15,7 +15,7 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 
 **Recommended install (Node.js runtime)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
+curl -fsSL "https://raw.githubusercontent.com/taoalpha/llm/master/install?ts=$(date +%s)" | bash
 ```
 
 The installer requires Node.js and installs it if missing.
@@ -32,7 +32,7 @@ curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash 
 
 **Windows (PowerShell) - recommended (Node.js runtime)**
 ```powershell
-powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"
+powershell -c "$u='https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1?ts='+[DateTimeOffset]::UtcNow.ToUnixTimeSeconds(); irm $u | iex; Install-Llm"
 ```
 
 Make sure `~/.local/bin` is in your PATH:
@@ -94,6 +94,15 @@ llm --self
 ## npm Installation
 
 Some providers (Gemini, Codex) require npm for installation. The LLM CLI will automatically detect if npm is missing and prompt you to install it.
+
+On Windows PowerShell, you may see a policy error when running `npm` (npm.ps1). Two quick options:
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
+```
+or
+```powershell
+& "C:\Program Files\nodejs\npm.cmd" install -g <package>
+```
 
 ### Termux/Android Support
 

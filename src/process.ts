@@ -9,6 +9,24 @@ export interface SpawnCommandOptions {
   setExitCode?: boolean;
 }
 
+const WINDOWS_SHELL_EXCLUSIONS = new Set(["cmd", "cmd.exe", "powershell", "powershell.exe", "pwsh", "pwsh.exe"]);
+
+function shouldUseWindowsShell(cmd: string): boolean {
+  if (process.platform !== "win32") return false;
+  if (WINDOWS_SHELL_EXCLUSIONS.has(cmd.toLowerCase())) return false;
+  if (cmd.includes("/") || cmd.includes("\\")) return false;
+  if (cmd.includes(".")) return false;
+  return true;
+}
+
+function quoteForCmd(arg: string): string {
+  const escaped = arg.replace(/\^/g, "^^").replace(/"/g, "^\"");
+  if (escaped === "" || /[\s&|<>()]/.test(escaped)) {
+    return `"${escaped}"`;
+  }
+  return escaped;
+}
+
 export async function spawnCommand(
   argv: string[],
   options: SpawnCommandOptions = {}
@@ -31,7 +49,12 @@ export async function spawnCommand(
   ];
 
   return await new Promise<number>((resolve) => {
-    const proc = spawn(cmd, args, { stdio });
+    const useShell = shouldUseWindowsShell(cmd);
+    const finalCmd = useShell ? "cmd.exe" : cmd;
+    const finalArgs = useShell
+      ? ["/d", "/s", "/c", [cmd, ...args].map(quoteForCmd).join(" ")]
+      : args;
+    const proc = spawn(finalCmd, finalArgs, { stdio });
 
     if (stdinOption instanceof Uint8Array) {
       proc.stdin?.write(stdinOption);

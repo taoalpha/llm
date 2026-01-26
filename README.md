@@ -13,9 +13,9 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 
 ### For Humans
 
-**Recommended install (installs Bun if missing)**
+**Recommended install (installs Node.js if missing)**
 ```bash
-curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-runtime
+curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
 ```
 
 **One-line install (macOS/Linux/Windows WSL)**
@@ -28,12 +28,7 @@ curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash
 curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --version 0.0.1
 ```
 
-**Windows (PowerShell) - recommended (installs Bun if missing)**
-```powershell
-powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm --install-runtime"
-```
-
-**Windows (PowerShell)**
+**Windows (PowerShell) - recommended (installs Node.js if missing)**
 ```powershell
 powershell -c "irm https://raw.githubusercontent.com/taoalpha/llm/master/install.ps1 | iex; Install-Llm"
 ```
@@ -51,7 +46,7 @@ Add to your `AGENTS.md` or system prompt:
 ## LLM CLI Tool
 
 Install:
-- `curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash -s -- --install-runtime`
+- `curl -fsSL https://raw.githubusercontent.com/taoalpha/llm/master/install | bash`
 
 Use it to:
 - Send prompts: `llm "your question here"`

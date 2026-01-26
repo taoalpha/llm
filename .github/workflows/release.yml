@@ -29,8 +29,8 @@ jobs:
       - name: Build standalone binaries
         run: bun run build:all
 
-      - name: Build Bun-runtime bundle
-        run: bun run build:bun
+      - name: Build Node runtime bundle
+        run: bun run build:node
 
       - name: Package release assets
         run: |
@@ -40,7 +40,7 @@ jobs:
           zip -j "dist/llm-linux-x64.zip" "dist/llm-linux-x64"
           zip -j "dist/llm-linux-arm64.zip" "dist/llm-linux-arm64"
           zip -j "dist/llm-windows-x64.zip" "dist/llm-windows-x64.exe"
-          zip -j "dist/llm-bun.zip" "dist/llm-bun.js"
+          zip -j "dist/llm-node.zip" "dist/llm-node.js"
 
       - name: Upload release assets
         uses: softprops/action-gh-release@v2

@@ -6,10 +6,10 @@ export const opencodeProvider: Provider = {
   name: "opencode",
   description: "OpenCode CLI",
   command: OPENCODE_COMMAND,
-  installHint: "bun add -g opencode-ai",
-  installHintWindows: "bun add -g opencode-ai",
+  installHint: "npm install -g opencode-ai",
+  installHintWindows: "npm install -g opencode-ai",
   uninstallHint: "opencode uninstall",
-  uninstallHintWindows: "bun remove -g opencode-ai",
+  uninstallHintWindows: "npm uninstall -g opencode-ai",
 
   async isInstalled() {
     return commandExists(this.command);

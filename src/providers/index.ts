@@ -4,6 +4,7 @@ import { opencodeProvider } from "./opencode";
 import { geminiProvider } from "./gemini";
 import { ollamaProvider } from "./ollama";
 import { codexProvider } from "./codex";
+import { piProvider } from "./pi";
 
 /**
  * All registered providers in priority order (for auto-detection)
@@ -13,6 +14,7 @@ export const providers: Provider[] = [
   claudeProvider,
   geminiProvider,
   codexProvider,
+  piProvider,
   ollamaProvider,
 ];
 

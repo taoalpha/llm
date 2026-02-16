@@ -150,11 +150,11 @@ async function main() {
   if (providerFlag) {
     // Explicit --provider flag
     activeProvider = getProvider(providerFlag);
-    if (!activeProvider) {
-      console.error(pc.red(`Error: Unknown provider "${providerFlag}"`));
-      console.error(pc.dim("Available: opencode, claude, gemini, codex, ollama"));
-      process.exit(1);
-    }
+      if (!activeProvider) {
+        console.error(pc.red(`Error: Unknown provider "${providerFlag}"`));
+        console.error(pc.dim("Available: opencode, claude, gemini, codex, pi, ollama"));
+        process.exit(1);
+      }
     if (!(await activeProvider.isInstalled())) {
       console.error(pc.red(`Error: Provider "${providerFlag}" is not installed`));
       

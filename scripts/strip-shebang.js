@@ -1,6 +1,7 @@
 import fs from "node:fs";
 
 const target = process.argv[2];
+const SHEBANG = "#!/usr/bin/env node";
 
 if (!target) {
   console.error("strip-shebang: missing target file path");
@@ -9,8 +10,8 @@ if (!target) {
 }
 
 const contents = fs.readFileSync(target, "utf8");
-if (contents.startsWith("#!")) {
-  const nextLineIndex = contents.indexOf("\n");
-  const stripped = nextLineIndex === -1 ? "" : contents.slice(nextLineIndex + 1);
-  fs.writeFileSync(target, stripped);
-}
+const nextLineIndex = contents.startsWith("#!") ? contents.indexOf("\n") : -1;
+const body = nextLineIndex === -1 ? contents : contents.slice(nextLineIndex + 1);
+
+fs.writeFileSync(target, `${SHEBANG}\n${body}`);
+fs.chmodSync(target, 0o755);

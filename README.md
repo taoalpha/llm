@@ -4,7 +4,7 @@ A lightweight, provider-agnostic CLI wrapper that auto-detects and delegates to 
 
 ## Features
 
-- **Zero Configuration**: Auto-detects installed LLM CLIs (OpenCode, Claude, Gemini, Codex, Ollama)
+- **Zero Configuration**: Auto-detects installed LLM CLIs (OpenCode, Claude, Gemini, Codex, Pi, Ollama)
 - **Transparent Proxy**: All flags and subcommands pass through to the underlying provider
 - **Pipe Support**: Process output from other CLI tools
 - **Cross-Platform**: JS runtime bundle (Node.js, Bun-compatible)
@@ -57,7 +57,7 @@ Use it to:
 - Switch providers: `llm --provider claude "hello"`
 - Manage settings: `llm --self`
 
-The tool auto-detects installed providers (opencode, claude, gemini, codex, ollama) and uses the first available one.
+The tool auto-detects installed providers (opencode, claude, gemini, codex, pi, ollama) and uses the first available one.
 ```
 
 ## Usage
@@ -89,6 +89,7 @@ llm --self
 | Claude | `claude` | `curl -fsSL https://claude.ai/install.sh | bash` |
 | Gemini | `gemini` | `npm install -g @google/gemini-cli` |
 | Codex | `codex` | `npm install -g @openai/codex` |
+| Pi | `pi` | `npm install -g @mariozechner/pi-coding-agent` |
 | Ollama | `ollama` | `curl -fsSL https://ollama.com/install.sh | sh` |
 
 ## npm Installation
